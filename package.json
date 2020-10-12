@@ -1,0 +1,41 @@
+{
+  "name": "FrontEnd-Demo",
+  "version": "1.0.0",
+  "description": "小葫芦中台接入前台服务演示",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaohulu-sh/FontEnd-Demo.git"
+  },
+  "keywords": [],
+  "author": "Johnson 顾",
+  "license": "Copyright (c) 2020 上海六界信息技术有限公司",
+  "dependencies": {
+    "@hapi/hapi": "^18.4.0",
+    "@hapi/boom": "^9.1.0",
+    "@hapi/inert": "^5.2.0",
+    "@hapi/vision": "^5.5.2",
+    "@hapi/joi": "^15.0.3",
+    "hapi-swagger": "^10.2.0",
+    "got": "^11.5.1",
+    "redis": "^2.8.0",
+    "md5": "^2.2.1",
+    "sha1": "^1.1.1",
+    "request": "^2.88.2",
+    "uuid": "^3.3.2",
+    "silly-datetime": "^0.1.2",
+    "async": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.27",
+    "@types/redis": "^2.8.10",
+    "@types/async": "^3.2.3",
+    "@types/got": "^9.6.11",
+    "@types/uuid": "^3.4.4",
+    "@types/hapi__hapi": "^18.2.5",
+    "@types/request": "^2.48.5"
+  }
+}

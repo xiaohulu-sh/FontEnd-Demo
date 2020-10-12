@@ -1,0 +1,22 @@
+{
+    "SUCCESS" : {
+        "code" : 0,
+        "message" : "success"
+    },
+    "ERROR" : {
+        "code" : 400,
+        "message" : "错误"
+    },
+    "System_Busy" : {
+        "code" : -1,
+        "message" : "系统繁忙，请稍后再试"
+    },
+    "Forbidden" : {
+        "code" : 403,
+        "message" : "拒绝访问"
+    },
+    "Token_Failure" : {
+        "code" : 444,
+        "message" : "凭证失效"
+    }
+}
