@@ -51,7 +51,7 @@ jobs:
         run: |
         IMAGE_ID=${{secrets.REGISTRY}}/xiaohulu/jd/$IMAGE_NAME
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        [ "$VERSION" == "main" ] && VERSION=latest
+        [ "$VERSION" == "master" ] && VERSION=latest
         docker build --pull -f Dockerfile -t $IMAGE_ID:$VERSION .
 
       - name: Log into aliyun Container Registry
@@ -66,7 +66,7 @@ jobs:
         VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
 
         # Use Docker `latest` tag convention
-        [ "$VERSION" == "main" ] && VERSION=latest
+        [ "$VERSION" == "master" ] && VERSION=latest
 
         echo $IMAGE_ID
         echo $VERSION
