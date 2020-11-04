@@ -13,7 +13,7 @@ export module routes {
         return server.route([
             {
                 method: ['POST'],
-                path: '/admin/login',
+                path: '/v1_api/login',
                 options: routes_config.admin_login(),
                 handler: async(request:Request, h:any) => {
                     return 1111;

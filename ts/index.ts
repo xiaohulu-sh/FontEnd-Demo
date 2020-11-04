@@ -36,7 +36,7 @@ import { routes } from './routes';
         host : localhost,
         schemes : schemes,
         tags:[
-            {name:"order", description:"【京东云前台】意向单"},
+            {name:"v1_api", description:"中台数据"},
         ]
     };
     let server = new hapi.Server({

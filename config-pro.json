@@ -1,0 +1,10 @@
+{
+    "APP_URL" : "http://localhost:10098",
+    "rpcHost" : "localhost",
+    "localhost" : "localhost",
+    "islhPort":true,
+    "rpcPort" : "10098",
+    "env":"dev",
+    "schemes":["http","https"],
+    "middleware_odata":"http://192.168.130.40:32000/odata"
+}
