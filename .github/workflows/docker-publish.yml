@@ -2,7 +2,7 @@ name: Docker
 
 on:
   push:
-    # Publish `master` as Docker `latest` image.
+    # Publish `main` as Docker `latest` image.
     branches:
       - master
 
@@ -46,27 +46,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
+      
       - name: Build image
-        run: 
-        echo ${{github.ref}}
+        run: |
+          IMAGE_ID=${{secrets.REGISTRY}}/xiaohulu/jd/$IMAGE_NAME
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [ "$VERSION" == "master" ] && VERSION=latest
+          docker build --pull -f Dockerfile -t $IMAGE_ID:$VERSION .
 
       - name: Log into aliyun Container Registry
       # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
         run: docker login ${{secrets.REGISTRY}} -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASSWORD }}
 
-      # - name: Push image to aliyun Container Registry
-      #   run: |
-      #   IMAGE_ID=${{secrets.REGISTRY}}/xiaohulu/jd/$IMAGE_NAME
+      - name: Push image to aliyun Container Registry
+        run: |
+          IMAGE_ID=${{secrets.REGISTRY}}/xiaohulu/jd/$IMAGE_NAME
 
-      #   # Strip git ref prefix from version
-      #   VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
 
-      #   # Use Docker `latest` tag convention
-      #   [ "$VERSION" == "master" ] && VERSION=latest
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
 
-      #   echo $IMAGE_ID
-      #   echo $VERSION
+          echo $IMAGE_ID
+          echo $VERSION
 
-      #   # docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-      #   docker push $IMAGE_ID:$VERSION
+          # docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
