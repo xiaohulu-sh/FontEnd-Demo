@@ -49,7 +49,7 @@ jobs:
 
       - name: Build image
         run: 
-        echo ${{secrets.REGISTRY}}
+        echo ${{github.ref}}
 
       - name: Log into aliyun Container Registry
       # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
