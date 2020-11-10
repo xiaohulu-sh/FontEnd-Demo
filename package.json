@@ -27,8 +27,7 @@
     "request": "^2.88.2",
     "uuid": "^3.3.2",
     "silly-datetime": "^0.1.2",
-    "async": "^3.2.0",
-    "odata":"^1.1.0"
+    "async": "^3.2.0"
   },
   "devDependencies": {
     "@types/node": "^14.0.27",
@@ -37,7 +36,6 @@
     "@types/got": "^9.6.11",
     "@types/uuid": "^3.4.4",
     "@types/hapi__hapi": "^18.2.5",
-    "@types/request": "^2.48.5",
-    "@types/odata":"^1.0.3"
+    "@types/request": "^2.48.5"
   }
 }

@@ -1,6 +1,6 @@
 
 import {routes_config} from './routes_config';
-// import { admin } from '../end/admin';
+import { api } from './controllers/api';
 
 export module routes {
     const QUERY = 'query';
@@ -9,16 +9,72 @@ export module routes {
         return new Date().getTime()/1000;
     }
 
-    export async function api(server:any){
+    export async function v1_api(server:any){
         return server.route([
             {
-                method: ['POST'],
-                path: '/v1_api/login',
-                options: routes_config.admin_login(),
+                method: ['GET'],
+                path: '/v1_api/anchor_base_info',
+                options: routes_config.anchor_base_info(QUERY),
                 handler: async(request:Request, h:any) => {
-                    return 1111;
+                    return await api.anchor_base_info(request,microtime());
                 },
-            }
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/video_data_summary',
+                options: routes_config.video_data_summary(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.video_data_summary(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/data_trend_line',
+                options: routes_config.data_trend_line(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.data_trend_line(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/video_issue_frequency',
+                options: routes_config.video_issue_frequency(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.video_issue_frequency(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/video_list',
+                options: routes_config.video_list(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.video_list(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/tycoon_list',
+                options: routes_config.tycoon_list(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.tycoon_list(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/overview',
+                options: routes_config.overview(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.overview(request,microtime());
+                },
+            },
+            // {
+            //     method: ['GET'],
+            //     path: '/v1_api/anchor_live_record',
+            //     options: routes_config.anchor_live_record(QUERY),
+            //     handler: async(request:Request, h:any) => {
+            //         return await api.anchor_live_record(request,microtime());
+            //     },
+            // }
         ]);
     }
     

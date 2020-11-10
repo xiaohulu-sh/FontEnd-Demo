@@ -1,14 +1,15 @@
 import process from 'process';
 const conf = require('../config.json');
-import { utils } from './library/utils';
 const Inert = require('@hapi/inert');
 const Vision = require('@hapi/vision');
 const Pack = require('../package.json');
 import Path from "path";
 import hapi from "@hapi/hapi";
 const HapiSwagger = require('hapi-swagger');
+import {redisHelper} from './library/redisHelper';
 
 import { routes } from './routes';
+import { utils } from './library/utils';
 
 (async () => {
     let host = conf['rpcHost'];
@@ -27,6 +28,11 @@ import { routes } from './routes';
         }
     }
     localhost = conf['localhost']==undefined?defaultLocalhost:customLocalhost;
+    let redis_client = await redisHelper.getInstance(conf['redis']);
+    redis_client.on("error", function(error){
+        console.log(error);
+        process.exit(1);
+    })
 
     const swaggerOptions = {
         info: {
@@ -70,7 +76,7 @@ import { routes } from './routes';
         }
     });
 
-    await routes.api(server);
+    await routes.v1_api(server);
 
     const init = async () => {
         try {

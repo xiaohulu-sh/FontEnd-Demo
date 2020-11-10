@@ -1,10 +1,17 @@
 {
     "APP_URL" : "http://localhost:10098",
-    "rpcHost" : "localhost",
+    "rpcHost" : "0.0.0.0",
     "localhost" : "localhost",
     "islhPort":true,
     "rpcPort" : "10098",
-    "env":"dev",
-    "schemes":["http","https"],
-    "middleware_odata":"http://192.168.130.40:32000/odata"
+    "env":"pro",
+    "schemes":["http"],
+    "middleware_odata":"http://192.168.130.40:32000/odata",
+    "core_host":"https://core.xiaohulu.com",
+    "redis" :{
+        "host":"10.210.96.7",
+        "port":6378,
+        "db":0
+    },
+    "server_url_ten":"http://121.10.141.33:5011"
 }

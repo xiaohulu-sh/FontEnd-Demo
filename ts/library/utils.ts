@@ -7,6 +7,7 @@ import uuidv4 from 'uuid/v4';
 const md5 = require('md5');
 import fs from "fs";
 import path from "path";
+import * as request from 'request';
 
 export module utils {
     export async function getAsync(url:string, retry?:number){
@@ -36,6 +37,54 @@ export module utils {
             };
             return response;
         }
+    }
+    export function getAsyncRequest(url: string, params:any) {
+        return new Promise<string>(async(success, reject) => {
+            if(!empty(params)){
+                let str = ToUrlParams(params);
+                url += `?${str}`;
+            }
+            let option:any = {
+                url: url,
+                timeout: 20000
+            }
+            
+            request.get(option, (err:any, res:any, body:any) => {
+                if (err) {
+                    // reject(err)
+                    console.log(err);
+                    success("");
+                } else {
+                    success(body as string)
+                }
+            })
+        })
+    }
+    export function postAsyncRequest(url: string, data: any, headers:any, params_format:string) {
+        return new Promise<string>(async(success, reject) => {
+            let option:any = {
+                url: url,
+                timeout: 20000
+            }
+            if(!utils.empty(headers)){
+                option['headers'] = headers;
+            }
+            if(params_format == 'form'){
+                option['form'] = data;
+            }else{
+                option['body'] = JSON.stringify(data);
+            }
+
+            request.post(option, (err:any, res:any, body:any) => {
+                if (err) {
+                    // reject(err)
+                    console.log(err);
+                    success("");
+                } else {
+                    success(body as string)
+                }
+            })
+        })
     }
     export async function postAsyncByPayLoad(url: string, data: any) {
         try {
@@ -127,7 +176,7 @@ export module utils {
     }
 
     export function empty(obj:any){
-        if(obj == ''){
+        if(obj == '' && obj !== 0){
             return true;
         }
         if(obj == null){
