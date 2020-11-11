@@ -1581,14 +1581,14 @@ export module api{
                     break;
             }
 
-            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,
                 path:route,
                 resTime:utils.microtime()
             });
         }catch(e){
-            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
             try{
                 let data = JSON.parse(e.message);
                 return utils.responseCommon(data, null, {
