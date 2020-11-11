@@ -67,14 +67,30 @@ export module routes {
                     return await api.overview(request,microtime());
                 },
             },
-            // {
-            //     method: ['GET'],
-            //     path: '/v1_api/anchor_live_record',
-            //     options: routes_config.anchor_live_record(QUERY),
-            //     handler: async(request:Request, h:any) => {
-            //         return await api.anchor_live_record(request,microtime());
-            //     },
-            // }
+            {
+                method: ['GET'],
+                path: '/v1_api/anchor_live_record',
+                options: routes_config.anchor_live_record(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.anchor_live_record(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/anchor_live_comprehensive_data',
+                options: routes_config.anchor_live_comprehensive_data(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.anchor_live_comprehensive_data(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/portrait',
+                options: routes_config.portrait(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.portrait(request,microtime());
+                },
+            }
         ]);
     }
     

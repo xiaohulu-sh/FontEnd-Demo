@@ -145,7 +145,13 @@ export module utils {
     export function date(format:string="YYYY-MM-DD HH:mm:ss"){
         return sd.format(new Date(), format);
     }
-
+    export function formatAirTime(num:number)
+    {
+        if (empty(num)) {
+            return 0;
+        }
+        return parseFloat((num/60).toFixed(1));
+    }
     //v1 是基于时间戳生成uuid
     //v4是随机生成uuid
     export function guid(clear = 1){

@@ -482,7 +482,7 @@ export module api{
             if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
                 platform = constants.LIVE_DOUYIN_PLAT_ID;
             }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
-                platform = constants.LIVE_DOUYIN_PLAT_ID;
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
@@ -657,6 +657,11 @@ export module api{
                     start_time:sd.format(+new Date()-24*60*60*1000, 'YYYY-MM-DD'),
                     end_time:sd.format(+new Date()-24*60*60*1000, 'YYYY-MM-DD')
                 };
+            }else{
+                current_time = {
+                    start_time:time,
+                    end_time:time
+                };
             }
             previous_time = {
                 start_time:sd.format(new Date(), 'YYYY-MM-DD'),
@@ -711,7 +716,7 @@ export module api{
             if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
                 platform = constants.LIVE_DOUYIN_PLAT_ID;
             }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
-                platform = constants.LIVE_DOUYIN_PLAT_ID;
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
@@ -1024,5 +1029,575 @@ export module api{
             }
         }
         return data_list;
+    }
+
+    /**
+     * 获取主播直播记录
+     * @param request 
+     * @param microtime 
+     */
+    export async function anchor_live_record(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {
+            total:0,
+            list:[]
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let time_type = query.time_type;
+            let time = query.time;
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 10){
+                limit = 10;
+            }
+            if(limit <= 0){
+                limit = 10;
+            }
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}|${page}|${limit}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let list:any = [];
+            let time_param = timeParamFormatTransform(time_type, time);
+            let days30_res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getSchedulerByRoomAndTime_30days`,{
+                platID:platform,
+                roomID:roomid,
+                limitCount:100,
+                IsEXISTAirtimeBaseTable:1,
+                startTime:`${time_param.current.start_time} 00:00:00`,
+                endTime:`${time_param.current.end_time} 23:59:59`
+            });
+            let days30_ret = JSON.parse(days30_res);
+            if(utils.empty(days30_ret) || days30_ret.code == 0){
+                // response.list = list;
+            }else{
+                let data = days30_ret.data;
+                let total = data.length;
+                let start = (page-1)*limit;
+                let slice_data = data.slice(start, start+limit);
+                for(let i = 0; i < slice_data.length; i++){
+                    let details:any = await getLiveDataByTaskId(slice_data[i].id);
+                    list.push({
+                        task_id:slice_data[i].id,
+                        update_time:sd.format(slice_data[i].update_time, 'YYYY-MM-DD HH:mm:ss'),
+                        sum_gift_price:details.all_gift_price,
+                        charge_gift_price:details.charge_gift_price,
+                        all_gift_price:details.all_gift_price,
+                        free_gift_price:details.free_gift_price,
+                        charge_gift_sender:details.charge_gift_sender,
+                        focus_grouth:await getAnchorLiveNewSubscribe(platform,roomid,utils.tomest(slice_data[i].live_start_time),utils.tomest(slice_data[i].live_end_time)),
+                        msg_count:details.msg_count,
+                        msg_sender:details.msg_sender,
+                        airtime:utils.formatAirTime(details.airtime),
+                        live_pic_url:slice_data[i].url,
+                        title:slice_data[i].title,
+                        live_start_time:!utils.empty(details.live_start_time)?details.live_start_time:slice_data[i].live_start_time,
+                        live_end_time:!utils.empty(details.live_last_time)?details.live_last_time:slice_data[i].live_end_time,
+                        statistics_date:slice_data[i].statistics_date,
+                        sourcegname:slice_data[i].sourcegname,
+                        max_hot:await _getLiveMaxHot(platform,roomid,utils.tomest(slice_data[i].live_start_time),utils.tomest(slice_data[i].live_end_time)),
+                        gift_value_percent_json:details.gift_value_percent_json,
+                        gift_sender_percent_json:details.gift_sender_percent_json,
+                        gift_sender_top_json:details.gift_sender_top_json,
+                        msg_sender_top_json:details.msg_sender_top_json,
+                        msg_send_frequency_json:details.msg_send_frequency_json,
+                        gift_value_timeline_json:details.gift_value_timeline_json,
+                        msg_timeline_json:details.msg_timeline_json,
+                        live_status:!utils.empty(slice_data[i].live_end_time)?false:true,
+                        total_income:0,
+                        order_num:0,
+                        price:0
+                    });
+                }
+                response.total = total;
+                response.list = list;
+            }
+            
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    async function getLiveDataByTaskId(taskId:string){
+        let details = {};
+        try {
+            let taskRes:any = await utils.getAsyncRequest(`${config['server_url_five']}/getSchedulerByTaskID`,{
+                taskID:taskId
+            });
+            let body = JSON.parse(taskRes);
+            if(!utils.empty(body) && body.code == 1){
+                details = body.data;
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    async function getAnchorLiveNewSubscribe(platform:number, roomid:string, start:number, end:number){
+        let details = {};
+        try {
+            let res:any = await utils.getAsyncRequest(`${config['server_url_six']}/getAnchorFansnumChangeByDate`,{
+                platID:platform,
+                roomID:roomid,
+                startTime:start,
+                endTime:utils.empty(end)?utils.tomest():end
+            });
+            let body = JSON.parse(res);
+            if(!utils.empty(body) && body.code == 0){
+                details = body.data;
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    async function _getLiveMaxHot(platform:number, roomid:string, start:number, end:number){
+        let details = {};
+        try {
+            let res:any = await utils.getAsyncRequest(`${config['server_url_six']}/getAnchorSamCountAndMaxPopularityByTime`,{
+                platID:platform,
+                roomID:roomid,
+                startTime:start,
+                endTime:utils.empty(end)?utils.tomest():end
+            });
+            let body = JSON.parse(res);
+            if(!utils.empty(body) && body.code == 0){
+                details = body.data;
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    /**
+     * 主播直播综合数据
+     * @param request 
+     * @param microtime 
+     */
+    export async function anchor_live_comprehensive_data(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let time_type = query.time_type;
+            let time = query.time;
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let list:any = [];
+            let time_param = timeParamFormatTransform(time_type, time);
+            let data:any = await getLiveComprehensiveData(platform, roomid, time_param.current.start_time, time_param.current.end_time);
+            let pre_data:any = await _getPreData(platform, roomid, time_param.current.start_time, time_param.current.end_time, time);
+            data.add_all_gift_price = data.all_gift_price - pre_data.all_gift_price;
+            data.add_charge_gift_price = data.charge_gift_price - pre_data.charge_gift_price;
+            data.add_free_gift_price = data.free_gift_price - pre_data.free_gift_price;
+            data.add_all_gift_sender = data.all_gift_sender - pre_data.all_gift_sender;
+            data.add_msg_count = data.msg_count - pre_data.msg_count;
+            data.add_msg_sender = data.msg_sender - pre_data.msg_sender;
+            if(utils.in_array(time, [constants.TIME_TYPE_TODAY, constants.TIME_TYPE_YESTERDAY])){
+                data.airtime = await getAnchorLiveAirtimeSingleDay(platform, roomid, time);
+            }
+            data.live_status = !utils.empty(data.airtime) && data.airtime > 0 ? true:false;
+            //TODO 小葫芦指数有待商榷
+            data.line = [];
+            // let xiaohulu_index = (time_param.current.start_time == time_param.current.end_time)?[]:await getXiaoHuLuIndex(platform, )
+
+            response = data;
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+
+    /**
+     * 今日昨日直播综合时长计算
+     */
+    async function getAnchorLiveAirtimeSingleDay(platform:number, roomid:string, time:string){
+        let airtime = 0;
+        try {
+            if(!utils.in_array(time, [constants.TIME_TYPE_TODAY, constants.TIME_TYPE_YESTERDAY])){
+                return airtime;
+            }
+            let days30_res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getSchedulerByRoomAndTime_30days`,{
+                platID:platform,
+                roomID:roomid,
+                limitCount:100,
+                IsEXISTAirtimeBaseTable:1
+            });
+            let days30_ret = JSON.parse(days30_res);
+            let list = [];
+            if(!utils.empty(days30_ret.data)){
+                list = days30_ret.data;
+                let datetime = '';
+                let tomorrow = utils.tomest(sd.format(+new Date()+24*60*60*1000, 'YYYY-MM-DD'));
+                if(time == constants.TIME_TYPE_TODAY){
+                    datetime = sd.format(new Date(), 'YYYY-MM-DD');
+                }else{
+                    datetime = sd.format(+new Date()-24*60*60*1000, 'YYYY-MM-DD');
+                }
+                for(let i = 0; i < list.length; i++){
+                    let end = utils.empty(list[i].live_end_time)?utils.tomest():utils.tomest(list[i].live_end_time);
+                    end = (end > tomorrow)?tomorrow:end;
+                    let start = utils.tomest(list[i].live_start_time) < utils.tomest(datetime)?utils.tomest(datetime):utils.tomest(list[i].live_start_time);
+                    let single_airtime = end > start ?end-start:0;
+                    airtime += single_airtime;
+                }
+                return parseFloat((airtime/3600).toFixed(1)) > 24?24:parseFloat((airtime/3600).toFixed(1));
+            }else{
+                return airtime;
+            }
+
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return airtime;
+        }
+    }
+    async function _getPreData(platform:number, roomid:string, start:string, end:string, time:string){
+        let details = {};
+        try {
+            if(time == constants.TIME_TYPE_RECENT_30){
+                details = await getOldComprehensiveData(platform, roomid, start, end, time);
+            }else if(time == constants.TIME_TYPE_RECENT_7){
+                details = await getOldComprehensiveData(platform, roomid, start, end, time);
+            }else{
+                let last_time = sd.format(+new Date(start)-24*60*60*1000, 'YYYY-MM-DD');
+                details = await getLiveComprehensiveData(platform, roomid, last_time, last_time);
+            }
+            let res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getTodayBaseTableAnchorLiveInfoSumData`,{
+                platID:platform,
+                roomID:roomid,
+                startDate:start,
+                endDate:end
+            });
+            let body = JSON.parse(res);
+            if(!utils.empty(body.data) && body.code == 1){
+                
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    async function getOldComprehensiveData(platform:number, roomid:string, start:string, end:string, time:string){
+        let details = {};
+        try {
+            let def = _getDefaultComprehensiveData(platform, roomid);
+            let params:any = {
+                platID:platform,
+                roomID:roomid,
+            }
+            if(time == constants.TIME_TYPE_RECENT_7){
+                params['dayCount'] = 7;
+                params['endDate'] = sd.format(+new Date(end)-24*60*60*1000*7, 'YYYY-MM-DD');
+            }else if(time == constants.TIME_TYPE_RECENT_30){
+                params['dayCount'] = 30;
+                params['endDate'] = sd.format(+new Date(utils.date(`YYYY-MM-01`))-24*60*60*1000, 'YYYY-MM-DD');
+            }
+            let res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getAnchorLiveMonthWeekSumData`,params);
+            let body = JSON.parse(res);
+            if(utils.empty(body.anchorLiveMonthWeekList)){
+                return def; 
+            }else{
+                let res = body.anchorLiveMonthWeekList[0];
+                for(let o of Object.keys(res)){
+                    if(utils.empty(res[o])){
+                        res[o] = 0;
+                    }
+                }
+                res.msg_count = res.msg_count_sum;
+                res.msg_sender = res.msg_sender_count_sum;
+                res.maxViewCount = res.max_view_count;
+                res.airtime = utils.formatAirTime(res.airtime_sum);
+                details = res;
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    function _getDefaultComprehensiveData(platform:number, roomid:string){
+        return {
+            platform_id : platform,
+            room_id : roomid,
+            all_gift_price : 0,
+            charge_gift_price : 0,
+            free_gift_price : 0,
+            all_gift_sender : 0,
+            charge_gift_sender : 0,
+            free_gift_sender : 0,
+            active_sender : 0,
+            maxViewCount : 0,
+            new_followNumber : 0,
+            msg_count : 0,
+            msg_sender : 0,
+        }
+    }
+    async function getLiveComprehensiveData(platform:number, roomid:string, start:string, end:string){
+        let details:any = _getDefaultComprehensiveData(platform, roomid);
+        try {
+            let res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getTodayBaseTableAnchorLiveInfoSumData`,{
+                platID:platform,
+                roomID:roomid,
+                startDate:start,
+                endDate:end
+            });
+            let body = JSON.parse(res);
+            if(!utils.empty(body.data) && body.code == 1){
+                details = body.data;
+                for(let o of Object.keys(details)){
+                    if(utils.empty(details[o])){
+                        details[o] = 0;
+                    }
+                }
+                details.airtime = utils.formatAirTime(details.airtime);
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return details;
+        }
+    }
+    
+    /**
+     * 粉丝画像
+     * @param request 
+     * @param microtime 
+     */
+    export async function portrait(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let type = query.type;
+            paramsCode = md5(`${route}|${platform}|${roomid}|${type}`);
+
+            let _constellation:any = {
+                '1' : '白羊座', '2' : '金牛座', '3' : '双子座', '4' : '巨蟹座',
+                '5' : '狮子座', '6' : '处女座', '7' : '天秤座', '8' : '天蝎座',
+                '9' : '射手座', '10' : '摩羯座', '11' : '水瓶座', '12' : '双鱼座',
+            };
+
+            switch(type){
+                case 1://性别分布
+                case 2://星座分布
+                case 5://年龄分布
+                case 6://地域分布
+                    let res:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/fan/analysis`, {
+                        platId:platform,
+                        roomId:roomid
+                    });
+                    let ret = JSON.parse(res);
+                    if(ret.code == 0 && !utils.empty(ret.data)){
+                        let data = JSON.parse(ret.data);
+                        if(type == 1){
+                            if(!utils.empty(data.gender)){
+                                response = data.gender;
+                            }
+                        }else if(type == 2){
+                            if(!utils.empty(data.constellation)){
+                                for(let o of Object.keys(_constellation)){
+                                    response[_constellation[o]] = data.constellation[`constellatio_${o}`];
+                                }
+                            }
+                        }else if(type == 5){
+                            if(!utils.empty(data.age)){
+                                let range:any = {
+                                    '6':'其他',
+                                    '18':'18-25岁',
+                                    '26':'26-32岁',
+                                    '33':'33-39岁',
+                                    '40':'40岁以上'
+                                };
+                                let sum = 0;
+                                for(let o of Object.keys(data.age)){
+                                    let ary:any = o.split('_');
+                                    if(!utils.empty(ary) && ary[0] == 'age' && !isNaN(ary[1])){
+                                        response[range[ary[1]]] = data.age[o];
+                                        sum += data.age[o];
+                                    }
+                                }
+                                for(let o of Object.keys(response)){
+                                    response[o] = parseFloat((parseFloat((response[o]/sum).toFixed(4))*100).toFixed(2));
+                                }
+                            }
+                        }else if(type == 6){
+                            if(!utils.empty(data.location)){
+                                let sum = 0;
+                                for(let i = 0; i < data.location.length; i++){
+                                    sum += data.location[i].count;
+                                }
+                                for(let i = 0; i < data.location.length; i++){
+                                    let location_name = data.location[i].location_name;
+                                    location_name.replace(/省/g,'');
+                                    location_name.replace(/自治区/g,'');
+                                    location_name.replace(/回族/g,'');
+                                    location_name.replace(/壮族/g,'');
+                                    location_name.replace(/维吾尔/g,'');
+                                    location_name.replace(/特别行政区/g,'');
+                                    response[location_name] = {
+                                        count:data.location[i].count,
+                                        percent:`${parseFloat((parseFloat((data.location[i].count/sum).toFixed(4))*100).toFixed(2))}%`
+                                    };
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case 3://粉丝活跃时间分布-按天
+                case 4://粉丝活跃时间分布-按周
+                    let res2:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/comment/analysis`, {
+                        platId:platform,
+                        roomId:roomid
+                    });
+                    let ret2 = JSON.parse(res2);
+                    if(ret2.code == 0 && !utils.empty(ret2.data)){
+                        let data = ret2.data;
+                        if(!utils.empty(data.day)){
+                            let sum = 0;
+                            for(let i = 0; i < data.day.length; i++){
+                                sum += data.day[i].count;
+                            }
+                            for(let i = 0; i < data.day.length; i++){
+                                response[data.day[i].date] = parseFloat((parseFloat((data.day[i].count/sum).toFixed(4))*100).toFixed(2));
+                            }
+                        }
+                        if(!utils.empty(data.week)){
+                            let week:any = {
+                                '0' : '星期日',
+                                '1' : '星期一',
+                                '2' : '星期二',
+                                '3' : '星期三',
+                                '4' : '星期四',
+                                '5' : '星期五',
+                                '6' : '星期六',
+                            };
+                            let sum = 0;
+                            for(let i = 0; i < data.week.length; i++){
+                                sum += data.week[i].count;
+                            }
+                            if(type == 4){
+                                for(let i = 0; i < data.week.length; i++){
+                                    response[week[data.week[i].date]] = parseFloat((parseFloat((data.week[i].count/sum).toFixed(4))*100).toFixed(2));
+                                }
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
     }
 }
