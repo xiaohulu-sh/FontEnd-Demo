@@ -807,7 +807,7 @@ export module api{
                         liveID:live_ids.join(',')
                     });
                     live_goods_info = live_goods_processor(JSON.parse(live_goods_info).data);
-                    //TODO 部分数据处理逻辑未编写
+                    
                     live_record_data = live_record_data_processor(slice_data, live_goods_info);
                 }
             }
@@ -874,6 +874,7 @@ export module api{
                     temp.total_income = live_goods[data_list[i].live_id].total_income;
                     temp.order_num = live_goods[data_list[i].live_id].order_num;
                     temp.price = !utils.empty(temp.order_num)?parseFloat((temp.total_income/temp.order_num).toFixed(2)):0;
+                    //TODO 以下数据处理逻辑未编写
                     // if(live_goods[data_list[i].live_id].trend){
                     //     temp.sales_price = live_record_trend_processor(live_goods[data_list[i].live_id].trend.sales_price);
                     //     temp.sales_number = live_record_trend_processor(live_goods[data_list[i].live_id].trend.sales_number);
@@ -900,8 +901,8 @@ export module api{
                 virtual_coin:!utils.empty(data.dyValue_add)?(data.dyValue_add/10):0,
                 tycoon_count_sum:!utils.empty(data.tyrant_count_sum)?data.tyrant_count_sum:0,
                 live_airtime_time:!utils.empty(data.live_airtime_time)?parseFloat((parseInt(data.live_airtime_time)/60).toFixed(2)):0,
-                total_viewer_sum:!utils.empty(data.total_viewer_sum)?data.total_viewer_sum:0,
-                total_viewer_max:!utils.empty(data.total_viewer_max)?data.total_viewer_max:0,
+                total_viewer_sum:!utils.empty(data.totalViewerSum)?data.totalViewerSum:0,
+                total_viewer_max:!utils.empty(data.onlineViewerMax)?data.onlineViewerMax:0,
                 update_time:!utils.empty(data.update_time)?sd.format(data.update_time, 'YYYY-MM-DD HH:mm:ss'):''
             };
         }else{
@@ -1250,7 +1251,6 @@ export module api{
                     resTime:utils.microtime()
                 });
             }
-            let list:any = [];
             let time_param = timeParamFormatTransform(time_type, time);
             let data:any = await getLiveComprehensiveData(platform, roomid, time_param.current.start_time, time_param.current.end_time);
             let pre_data:any = await _getPreData(platform, roomid, time_param.current.start_time, time_param.current.end_time, time);
@@ -1264,10 +1264,11 @@ export module api{
                 data.airtime = await getAnchorLiveAirtimeSingleDay(platform, roomid, time);
             }
             data.live_status = !utils.empty(data.airtime) && data.airtime > 0 ? true:false;
-            //TODO 小葫芦指数有待商榷
-            data.line = [];
-            // let xiaohulu_index = (time_param.current.start_time == time_param.current.end_time)?[]:await getXiaoHuLuIndex(platform, )
-
+            data.line = {};
+            let xiaohulu_index = (time_param.current.start_time == time_param.current.end_time)?[]:await getXiaoHuLuIndex(platform, roomid, time_param.current.start_time, time_param.current.end_time)
+            if(!utils.empty(_updateMsgLineData)){
+                data.line = _updateMsgLineData(xiaohulu_index);
+            }
             response = data;
             await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
@@ -1291,6 +1292,51 @@ export module api{
         }
     }
 
+    function _updateMsgLineData(xiaohulu_index:any){
+        let follow = [];
+        let max_view = [];
+        let airtime = [];
+        for(let i = 0; i < xiaohulu_index.length; i++){
+            follow.push({
+                value:xiaohulu_index[i].followNumber,
+                time:sd.format(xiaohulu_index[i].date, 'MM-DD')
+            });
+            max_view.push({
+                value:xiaohulu_index[i].maxViewCount,
+                time:sd.format(xiaohulu_index[i].date, 'MM-DD'),
+            });
+            airtime.push({
+                value:xiaohulu_index[i].airtime,
+                time:sd.format(xiaohulu_index[i].date, 'MM-DD'),
+            });
+        }
+
+        return {
+            follow:follow,
+            max_view:max_view,
+            airtime:airtime
+        };
+    }
+
+    async function getXiaoHuLuIndex(platform:number, roomid:string, start:string, end:string){
+        let list:any = [];
+        try {
+            let indexRes:any = await utils.getAsyncRequest(`${config['server_url_one']}/getXiaoHuLuIndex`,{
+                platID:platform,
+                roomID:roomid,
+                startDate:start,
+                endDate:end
+            });
+            let indexRet = JSON.parse(indexRes);
+            if(!utils.empty(indexRet)){
+                list = indexRet;
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return list;
+        }
+    }
     /**
      * 今日昨日直播综合时长计算
      */
@@ -1372,7 +1418,8 @@ export module api{
             }
             if(time == constants.TIME_TYPE_RECENT_7){
                 params['dayCount'] = 7;
-                params['endDate'] = sd.format(+new Date(end)-24*60*60*1000*7, 'YYYY-MM-DD');
+                let d = new Date(end).getDay();
+                params['endDate'] = sd.format(+new Date(end)-24*60*60*1000*d, 'YYYY-MM-DD');
             }else if(time == constants.TIME_TYPE_RECENT_30){
                 params['dayCount'] = 30;
                 params['endDate'] = sd.format(+new Date(utils.date(`YYYY-MM-01`))-24*60*60*1000, 'YYYY-MM-DD');
