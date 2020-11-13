@@ -7,6 +7,11 @@ export class constants{
 
     public static TIME_TYPE_RECENT_TIME = 'recent_time';
 
+    public static SOURCE_LIST = 'list';
+    public static SOURCE_DETAIL = 'detail';
+
+    public static TIME_TYPE_MONTH = 'month';
+    public static TIME_TYPE_WEEK = 'week';
     public static TIME_TYPE_DAY = 'day';
     public static TIME_TYPE_TODAY = 'today';
     public static TIME_TYPE_YESTERDAY = 'yesterday';

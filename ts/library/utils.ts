@@ -38,6 +38,9 @@ export module utils {
             return response;
         }
     }
+    export function defaultVal(target:any, trueVal:any, falseVal:any){
+        return !empty(target)?trueVal:falseVal;
+    }
     export function getAsyncRequest(url: string, params:any) {
         return new Promise<string>(async(success, reject) => {
             if(!empty(params)){

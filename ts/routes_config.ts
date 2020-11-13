@@ -6,7 +6,6 @@ export module routes_config{
         let val = Joi.object({
             platform:Joi.number().required().description('平台号'),
             roomid:Joi.string().required().description('房间id'),
-            // isRefresh:Joi.number().default(2).description('1.强制刷新2.使用缓存')
         });
         let obj:any = {};
         obj[valid] = val;
@@ -201,4 +200,64 @@ export module routes_config{
             validate:obj
         }
     }
+    
+    export function dyshop_overview(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('平台号'),
+            roomid:Joi.string().required().description('房间id'),
+            time_type:Joi.string().required().allow(['recent_time','day']).description('时间类型：recent_time（代表近日选择）/day（代表日期选择）'),
+            time:Joi.string().required().description('【recent_time下选择】：today/yesterday/recent_7/recent_30 【day下选择】：日期格式YYYY-MM-DD,去除今日昨日的往前推8天时间'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '【带货直播分析】电商数据概览',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    export function live_list(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('平台号'),
+            roomid:Joi.string().required().description('房间id'),
+            time_type:Joi.string().required().allow(['recent_time','day']).description('时间类型：recent_time（代表近日选择）/day（代表日期选择）'),
+            time:Joi.string().required().description('【recent_time下选择】：today/yesterday/recent_7/recent_30 【day下选择】：日期格式YYYY-MM-DD,去除今日昨日的往前推8天时间'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '【带货直播分析】直播场次列表',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
+    export function goods_list(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('平台号'),
+            roomid:Joi.string().required().description('房间id'),
+            time_type:Joi.string().required().allow(['recent_time','day']).description('时间类型：recent_time（代表近日选择）/day（代表日期选择）'),
+            time:Joi.string().required().description('【recent_time下选择】：today/yesterday/recent_7/recent_30 【day下选择】：日期格式YYYY-MM-DD,去除今日昨日的往前推8天时间'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '【带货直播分析】直播商品列表',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
 }

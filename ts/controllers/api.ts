@@ -34,18 +34,15 @@ export module api{
             let platform = query.platform;
             let roomid = query.roomid;
             paramsCode = md5(`${route}|${platform}|${roomid}`);
-            // let isRefresh = query.isRefresh;
 
-            // if(isRefresh == 2){
-                let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-                if(!utils.empty(cacheRes)){
-                    return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
-                        microtime:microtime,
-                        path:route,
-                        resTime:utils.microtime()
-                    });
-                }
-            // }
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
             
             //短视频数据获取
             let video_res:any = await utils.postAsyncRequest(`${config['core_host']}/apis/cloud/api/v1/shortvideo/author/detail/get`, {
@@ -392,7 +389,8 @@ export module api{
             }
             let trend_res:any = await utils.postAsyncRequest(`${config['core_host']}/apis/cloud/api/v1/shortvideo/${url}`, {
                 platId:platform,
-                roomId:roomid
+                roomId:roomid,
+                limit:limit
             },{
                 'Content-Type':'application/json'
             },"body");
@@ -937,7 +935,7 @@ export module api{
             };
         }
     }
-    function live_goods_processor(live_goods_list:any){
+    function live_goods_processor(live_goods_list:any, trend:boolean = false){
         let data_list:any = {};
         if(!utils.empty(live_goods_list)){
             for(let i = 0; i < live_goods_list.length; i++){
@@ -951,17 +949,58 @@ export module api{
                     data_list[live_goods_list[i].live_id].total_income += total_income;
                     data_list[live_goods_list[i].live_id].order_num += order_num;
                     data_list[live_goods_list[i].live_id].product_id.concat(live_goods_list[i].product_id);
+                    if(trend){
+                        data_list[live_goods_list[i].live_id].trend = live_record_trend_order_price(live_goods_list[i].min_price, live_goods_list[i].sales_number_trend, data_list[live_goods_list[i].live_id].trend);
+                    }
                 }else{
                     data_list[live_goods_list[i].live_id] = {
                         total_income:total_income,
                         order_num:order_num,
                         product_id:live_goods_list[i].product_id
                     }
+                    if(trend){
+                        data_list[live_goods_list[i].live_id].trend = live_record_trend_order_price(live_goods_list[i].min_price, live_goods_list[i].sales_number_trend);
+                    }
                 }
                 data_list[live_goods_list[i].live_id].total_income = parseFloat(data_list[live_goods_list[i].live_id].total_income.toFixed(2));
             }
         }
         return data_list;
+    }
+    function live_record_trend_order_price(min_price:number, sales_number_trend:any, basic_data:any = {}){
+        min_price = min_price/100;
+        sales_number_trend = JSON.parse(sales_number_trend);
+        let sales_price:any = {};
+        let sales_number:any = {};
+        if(!utils.empty(basic_data)){
+            sales_price = !utils.empty(basic_data.sales_price)?basic_data.sales_price:[];
+            sales_number = !utils.empty(basic_data.sales_number)?basic_data.sales_number:[];
+        }
+        if(!utils.empty(sales_number_trend)){
+            for(let i = 0; i < sales_number_trend.length; i++){
+                if(sales_number_trend[i].value){
+                    continue;
+                }
+                let time = sd.format(sales_number_trend[i].time, 'YYYY-MM-DD HH:mm');
+                if(sales_price[time] != undefined){
+                    sales_number[time].value = parseFloat((sales_number[time].value+sales_number_trend[i].value).toFixed(2));
+                    sales_price[time].value = parseFloat((sales_price[time].value+(sales_number_trend[i].value * min_price)).toFixed(2));
+                }else{
+                    sales_number[time] = {
+                        time:time,
+                        value:sales_number_trend[i].value
+                    };
+                    sales_price[time] = {
+                        time:time,
+                        value:sales_number_trend[i].value * min_price
+                    };
+                }
+            }
+        }
+        return {
+            sales_price:sales_price,
+            sales_number:sales_number
+        }
     }
     function data_detail_processor(data_info:any, time_type:string){
         let virtual_coin:any = [];
@@ -1648,5 +1687,614 @@ export module api{
                 return utils.responseCommon(results['ERROR'], null, {});
             }
         }
+    }
+    /**
+     * 【带货直播分析】抖音电商数据概览
+     * @param request 
+     * @param microtime 
+     */
+    export async function dyshop_overview(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let time_type = query.time_type;
+            let time = query.time;
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let current_data:any;
+            let previous_data:any;
+            let data_detail:any;
+            let time_param = timeParamFormatTransform(time_type, time);
+            if(time_type == constants.TIME_TYPE_RECENT_TIME && utils.in_array(time, [constants.TIME_TYPE_RECENT_7, constants.TIME_TYPE_RECENT_30])){
+                let type = 7;
+                if(time == constants.TIME_TYPE_RECENT_30){
+                    type = 30;
+                }
+                let current_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorWeekMonthSaleInfoByPlatRoomDate`,{
+                    platIDRoomID:`${platform},${roomid}`,
+                    dayCount:type,
+                    date:time_param.current.end_time
+                });
+                let previous_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorWeekMonthSaleInfoByPlatRoomDate`,{
+                    platIDRoomID:`${platform},${roomid}`,
+                    dayCount:type,
+                    date:time_param.previous.end_time
+                });
+                let data_detail_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorSaleInfoByPlatRoomDate`,{
+                    platID:platform,
+                    roomID:roomid,
+                    startDate:time_param.current.start_time,
+                    endDate:time_param.current.end_time
+                });
+                
+                current_data = dyshop_overview_data_processor(JSON.parse(current_res).data);
+                previous_data = dyshop_overview_data_processor(JSON.parse(previous_res).data);
+                data_detail = dyshop_data_detail_processor(JSON.parse(data_detail_res).data, constants.TIME_TYPE_RECENT_TIME);
+            }else{
+                let current_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorSaleInfoByPlatRoomDate`,{
+                    platID:platform,
+                    roomID:roomid,
+                    startDate:time_param.current.start_time,
+                    endDate:time_param.current.end_time
+                });
+                let previous_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorSaleInfoByPlatRoomDate`,{
+                    platID:platform,
+                    roomID:roomid,
+                    startDate:time_param.previous.start_time,
+                    endDate:time_param.previous.end_time
+                });
+                
+                current_data = dyshop_single_overview_data_processor(JSON.parse(current_res).data);
+                previous_data = dyshop_single_overview_data_processor(JSON.parse(previous_res).data);
+                data_detail = dyshop_data_detail_processor(JSON.parse(current_res).data, constants.TIME_TYPE_DAY);
+            }
+
+            current_data.compare_goods_num = current_data.goods_num - previous_data.goods_num;
+            current_data.compare_order_num = current_data.order_num - previous_data.order_num;
+            current_data.compare_total_income = current_data.total_income - previous_data.total_income;
+
+            response.overview_data = current_data;
+            response.data_detail = data_detail;
+
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    function dyshop_single_overview_data_processor(data:any){
+        if(!utils.empty(data)){
+            return {
+                goods_num:!utils.empty(data[0].goods_num)?data[0].goods_num:0,
+                order_num:!utils.empty(data[0].sales_number_add_sum)?data[0].sales_number_add_sum:0,
+                total_income:!utils.empty(data[0].sales_price_add)?(data[0].sales_price_add/100):0,
+                update_time:(!utils.empty(data[0].update_time)?sd.format(data[0].update_time, 'YYYY-MM-DD HH:mm:ss'):'')
+            }
+        }else{
+            return {
+                goods_num:0,
+                order_num:0,
+                total_income:0,
+                update_time:''
+            }
+        }
+    }
+
+    function dyshop_overview_data_processor(data:any){
+        let goods_num = 0;
+        let order_num = 0;
+        let total_income = 0;
+        let update_time = '';
+        if(!utils.empty(data)){
+            for(let i = 0; i < data.length; i++){
+                goods_num += (!utils.empty(data[i].goods_num)?data[i].goods_num:0);
+                order_num += (!utils.empty(data[i].sales_number_add_sum)?data[i].sales_number_add_sum:0);
+                total_income += (!utils.empty(data[i].sales_price_add)?data[i].sales_price_add:0);
+                update_time = (!utils.empty(data[i].update_time)?sd.format(data[i].update_time, 'YYYY-MM-DD HH:mm:ss'):'');
+            }
+        }
+        return {
+            goods_num:goods_num,
+            order_num:order_num,
+            total_income:total_income,
+            update_time:update_time
+        };
+    }
+    function dyshop_data_detail_processor(data_info:any, time_type:string){
+        let sales_price:any = [];
+        let sales_number:any = [];
+        if(!utils.empty(data_info)){
+            if(time_type == constants.TIME_TYPE_DAY){
+                sales_price = !utils.empty(data_info[0].sales_price_trend)?JSON.parse(data_info[0].sales_price_trend):[];
+                sales_number = !utils.empty(data_info[0].sales_number_trend)?JSON.parse(data_info[0].sales_number_trend):[];
+
+                sales_price = dyshop_data_detail_processor_branch(sales_price, 'sales_price');
+                sales_number = dyshop_data_detail_processor_branch(sales_number, 'sales_number');
+            }else{
+                for(let i = 0; i < data_info.length; i++){
+                    if(!utils.empty(data_info[i].statistics_date) && !utils.empty(data_info[i].sales_price_add)){
+                        sales_price.push({
+                            time:data_info[i].statistics_date,
+                            value:data_info[i].sales_price_add
+                        });
+                    }
+                    if(!utils.empty(data_info[i].statistics_date) && !utils.empty(data_info[i].sales_number_add_sum)){
+                        sales_number.push({
+                            time:data_info[i].statistics_date,
+                            value:data_info[i].sales_number_add_sum
+                        });
+                    }
+                }
+            }
+        }
+        return {
+            sales_price:sales_price,
+            sales_number:sales_number
+        }
+    }
+
+    function dyshop_data_detail_processor_branch(data_list:any, type:string = 'sales_price'){
+        let list = [];
+        if(!utils.empty(data_list)){
+            for(let i = 0; i < data_list.length; i++){
+                let temp = 0;
+                if(type == 'sales_price'){
+                    temp = data_list[i].value / 100;
+                }else{
+                    temp = data_list[i].value;
+                }
+                if(temp > 0){
+                    list.push({
+                        time:sd.format(data_list[i].time, 'HH:mm'),
+                        value:temp
+                    })
+                }
+                data_list[i].time = sd.format(new Date(data_list[i].time*1000), 'HH:mm');
+            }
+        }
+        return data_list;
+    }
+
+    export async function live_list(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {
+            live_list:[],
+            average:[],
+            lastest_live_info:{},
+            time:{}
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let time_type = query.time_type;
+            let time = query.time;
+            let average = true;// bool  true 获取30天 场次总览 与 均值 false 获取单日场次列表信息
+            let is_shopping = 1;
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let time_param = timeParamFormatTransform(time_type, time);
+            let live_goods_info:any;
+            let average_list = [];
+            let lastest_live_info_res:any;
+            let liveRes:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorLiveInfoAndBase`,{
+                platID:platform,
+                roomID:roomid,
+                startTime:`${time_param.current.start_time} 00:00:00`,
+                endTime:`${time_param.current.end_time} 23:59:59`,
+                limitCount:100,
+                is_shopping:is_shopping
+            });
+
+            let liveRet = JSON.parse(liveRes);
+            if(liveRet.code == 1 && !utils.empty(liveRet.data)){
+                let data = liveRet.data;
+                // if(time_type == constants.TIME_TYPE_DAY){
+
+                // }
+                let live_ids = [];
+                for(let i = 0; i < data.length; i++){
+                    live_ids.push(data[i].live_id);
+                }
+                let liveRecordGoodsListRes:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorGoodsSaleInfoByPlatRoomLive`,{
+                    platID:platform,
+                    roomID:roomid,
+                    liveID:live_ids.join(',')
+                });
+                let liveRecordGoodsListRet = JSON.parse(liveRecordGoodsListRes);
+                live_goods_info = liveRecordGoodsListRet.data;
+                let live_list_goods_info = live_goods_processor(live_goods_info, average);
+                let lastest_live_id = live_ids[0];
+                lastest_live_info_res = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorLiveInfoByAnchorAndLiveId`,{
+                    platID:platform,
+                    roomID:roomid,
+                    liveID:lastest_live_id
+                });
+                let liveList = live_record_data_processor(data, live_list_goods_info);
+                if(average){
+                    average_list = get_live_list_average(liveList);
+                }
+                for(let i = 0; i < liveList.length; i++){
+                    if(platform == constants.LIVE_KUAISHOU_PLAT_ID){
+                        let ks_live_info_res:any = await utils.getAsyncRequest(`${config['server_url_five']}/getSchedulerByTaskID`,{
+                            taskID:liveList[i].live_id
+                        });
+                        let ks_live_info_ret = JSON.parse(ks_live_info_res);
+                        if(ks_live_info_ret.code == 1 && !utils.empty(ks_live_info_ret)){
+                            let ks_live_info_data = ks_live_info_ret.data;
+                            if(!utils.empty(ks_live_info_data.live_pic_url)){
+                                liveList[i].live_img = ks_live_info_data.live_pic_url;
+                            }
+                            if(!utils.empty(ks_live_info_data.title)){
+                                liveList[i].title = ks_live_info_data.title;
+                            }
+                            if(!utils.empty(ks_live_info_data.charge_gift_price)){
+                                liveList[i].virtual_coin = ks_live_info_data.charge_gift_price;
+                            }
+                            if(!utils.empty(ks_live_info_data.charge_gift_sender)){
+                                liveList[i].tycoon_count_sum = ks_live_info_data.charge_gift_sender;
+                            }
+                        }
+                    }
+                    if(utils.empty(average)){
+                        let live_info_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorLiveInfoByAnchorAndLiveId`,{
+                            platID:platform,
+                            roomID:roomid,
+                            liveID:liveList[i].live_id
+                        });
+                        let live_info_ret = JSON.parse(live_info_res);
+                        if(!utils.empty(live_info_ret.totalViewerTrend)){
+                            let total_viewer = JSON.parse(live_info_ret.totalViewerTrend);
+                            liveList[i].total_viewer = data_detail_processor_branch(total_viewer, 'total_viewer');
+                        }
+                        liveList[i].live_source_link = !utils.empty(live_info_ret.live_source_link)?live_info_ret.live_source_link:''
+                    }
+                }
+                response.live_list = liveList;
+                response.average = average_list;
+                response.lastest_live_info = JSON.parse(lastest_live_info_res);
+                response.time = time_param.current;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            console.log(e);
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    function get_live_list_average(list:any){
+        let average:any = {};
+        let total_viewer_sum = 0;
+        let order_num = 0;
+        let total_income = 0;
+        let new_fans_num = 0;
+        let num = 0;
+        if(!utils.empty(list)){
+            for(let i = 0; i < list.length; i++){
+                let start_time = !utils.empty(list[i].start_time)?utils.tomest(list[i].start_time):0;
+                let end_time = !utils.empty(list[i].end_time)?utils.tomest(list[i].end_time):0;
+                if(!utils.empty(list[i].total_income) && (end_time-start_time) > 30 *60){
+                    total_viewer_sum += list[i].total_viewer_sum;
+                    order_num += list[i].order_num;
+                    total_income += list[i].total_income;
+                    new_fans_num += list[i].new_fans_num;
+                    num++;
+                }
+            }
+            if(num != 0){
+                average = {
+                    total_viewer_sum:parseFloat((total_viewer_sum/num).toFixed(2)),
+                    order_num:parseFloat((order_num/num).toFixed(2)),
+                    total_income:parseFloat((total_income/num).toFixed(2)),
+                    new_fans_num:parseFloat((new_fans_num/num).toFixed(2)),
+                }
+                average.price = !utils.empty(order_num)?parseFloat((average.total_income/average.order_num).toFixed(2)):0
+            }
+        }
+        return average;
+    }
+    
+    export async function goods_list(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {
+            data:[],
+            total:0
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let time_type = query.time_type;
+            let time = query.time;
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let time_param = timeParamFormatTransform(time_type, time);
+            let rank_type = constants.TIME_TYPE_DAY;
+            if(time_type == constants.TIME_TYPE_RECENT_TIME && utils.in_array(time, [constants.TIME_TYPE_RECENT_7, constants.TIME_TYPE_RECENT_30])){
+                let type = 7;
+                if(time == constants.TIME_TYPE_RECENT_30){
+                    type = 30;
+                }
+                let goods_list_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorGoodsWeeekMonthInfoByPlatRoomDate`,{
+                    platID:platform,
+                    roomID:roomid,
+                    date:sd.format(+new Date()-24*60*60*1000, 'YYYY-MM-DD'),
+                    dayCount:type
+                });
+                let goods_list_ret = JSON.parse(goods_list_res);
+                let goods_list = !utils.empty(goods_list_ret.data)?goods_list_ret.data:[];
+                rank_type = constants.TIME_TYPE_DAY
+                if(!utils.empty(goods_list)){
+                    response.data = await live_goods_list_detail_product_id(goods_list, constants.SOURCE_DETAIL, rank_type);
+                }
+            }else{
+                let goods_list_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorGoodsSaleInfoByPlatRoomDate`,{
+                    platID:platform,
+                    roomID:roomid,
+                    startDate:time_param.current.start_time,
+                    endDate:time_param.current.end_time
+                });
+                let goods_list_ret = JSON.parse(goods_list_res);
+                let goods_list = !utils.empty(goods_list_ret.data)?goods_list_ret.data:[];
+                if(!utils.empty(goods_list)){
+                    response.data = await live_goods_list_detail(goods_list, constants.SOURCE_DETAIL, rank_type);
+                }
+            }
+            response.total = utils.defaultVal(response.data, response.data.length, 0);
+
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            console.log(e);
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    async function live_goods_list_detail(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
+        try {
+            if(!utils.empty(data_list)){
+                data_list = data_list.slice(0, 300);
+                let tempList = [];
+                for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(data_list[i].platform_id) && !utils.empty(data_list[i].promotion_id)){
+                        data_list[i]['plat_goods_id_comma'] = `${data_list[i].platform_id},${data_list[i].promotion_id}`;
+                        tempList.push(`${data_list[i].platform_id},${data_list[i].product_id}`);
+                    }else{
+                        data_list[i]['plat_goods_id_comma'] = '';
+                    }
+                }
+                let plat_goods_id_comm = tempList.join('_');
+                let goods_list_detail_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getGoodsBaseInfoByPlatPromotionIDS`,{
+                    platID_productIDS:plat_goods_id_comm
+                });
+                let goods_list_detail_ret = JSON.parse(goods_list_detail_res);
+                let data = goods_list_detail_ret.data;
+                let goods_list_detail:any = {};
+                for(let i = 0; i < data.length; i++){
+                    goods_list_detail[data[i].promotion_id] = data[i];
+                }
+                for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(goods_list_detail[data_list[i].promotion_id])){
+                        data_list[i].goods_image = !utils.empty(goods_list_detail[data_list[i].promotion_id].cover)?goods_list_detail[data_list[i].promotion_id].cover:'';
+                        data_list[i].short_title = utils.empty(data_list[i].short_title)?goods_list_detail[data_list[i].promotion_id].short_title:data_list[i].short_title;
+                        data_list[i].title = utils.empty(data_list[i].title)?goods_list_detail[data_list[i].promotion_id].title:data_list[i].title;
+                        data_list[i].coupon = !utils.empty(goods_list_detail[data_list[i].promotion_id].coupon)?goods_list_detail[data_list[i].promotion_id].coupon:'';
+                        data_list[i].seckill_min_price = !utils.empty(goods_list_detail[data_list[i].promotion_id].seckill_min_price)?goods_list_detail[data_list[i].promotion_id].seckill_min_price:'';
+                        data_list[i].detail_url = utils.defaultVal(data_list[i].detail_url,data_list[i].detail_url,utils.defaultVal(goods_list_detail[data_list[i].promotion_id].detail_url,goods_list_detail[data_list[i].promotion_id].detail_url,''));
+                    }
+                    data_list[i] = goods_list_processor(data_list[i], source, time_type);
+                }
+            }
+            return data_list;
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return data_list;
+        }
+    }
+
+    async function live_goods_list_detail_product_id(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
+        try {
+            if(!utils.empty(data_list)){
+                data_list = data_list.slice(0, 300);
+                let tempList = [];
+                for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(data_list[i].platform_id) && !utils.empty(data_list[i].product_id)){
+                        data_list[i]['plat_goods_id_comma'] = `${data_list[i].platform_id},${data_list[i].product_id}`;
+                        tempList.push(`${data_list[i].platform_id},${data_list[i].product_id}`);
+                    }else{
+                        data_list[i]['plat_goods_id_comma'] = '';
+                    }
+                }
+                let plat_goods_id_comm = tempList.join('_');
+                let goods_list_detail_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getGoodsBaseInfoByPlatPromotionIDS`,{
+                    platID_productIDS:plat_goods_id_comm
+                });
+                let goods_list_detail_ret = JSON.parse(goods_list_detail_res);
+                let data = goods_list_detail_ret.data;
+                let goods_list_detail:any = {};
+                for(let i = 0; i < data.length; i++){
+                    goods_list_detail[data[i].product_id] = data[i];
+                }
+                for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(goods_list_detail[data_list[i].product_id])){
+                        data_list[i].goods_image = !utils.empty(goods_list_detail[data_list[i].product_id].cover)?goods_list_detail[data_list[i].product_id].cover:'';
+                        data_list[i].short_title = utils.empty(data_list[i].short_title)?goods_list_detail[data_list[i].product_id].short_title:data_list[i].short_title;
+                        data_list[i].title = utils.empty(data_list[i].title)?goods_list_detail[data_list[i].product_id].title:data_list[i].title;
+                        data_list[i].coupon = !utils.empty(goods_list_detail[data_list[i].product_id].coupon)?goods_list_detail[data_list[i].product_id].coupon:'';
+                        data_list[i].seckill_min_price = !utils.empty(goods_list_detail[data_list[i].product_id].seckill_min_price)?goods_list_detail[data_list[i].product_id].seckill_min_price:'';
+                    }
+                    data_list[i] = goods_list_processor(data_list[i], source, time_type);
+                }
+            }
+            return data_list;
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return data_list;
+        }
+    }
+    function goods_list_processor(data:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
+        let source_id_map_name:any = {
+            4 : '抖音小店', 5 : '淘宝', 6 : '抖音小店', 7 : '淘宝',
+            8 : '京东', 9 : '考拉', 10 : '唯品会', 11 : '苏宁',
+            94 : '魔筷', 95 : '有赞', 98 : '闪电购', 99 : '快手小店',
+        }
+        let goods = {
+            goods_id:utils.defaultVal(data.promotion_id, data.promotion_id, ''),
+            goods_name:utils.defaultVal(data.short_title, data.short_title, ''),
+            goods_image:utils.defaultVal(data.goods_image, data.goods_image, ''),
+            title:utils.defaultVal(data.title, data.title, ''),
+            platform_id:utils.defaultVal(data.platform_id, data.platform_id, ''),
+            product_id:utils.defaultVal(data.product_id, data.product_id, ''),
+            price:utils.defaultVal(data.price, parseFloat((data.price/100).toFixed(2)), 0),
+            min_price:utils.defaultVal(data.min_price, parseFloat((data.min_price/100).toFixed(2)), 0),
+            coupon:utils.defaultVal(data.coupon, parseFloat((data.coupon/100).toFixed(2)), 0),
+            seckill_min_price:utils.defaultVal(data.seckill_min_price, parseFloat((data.seckill_min_price/100).toFixed(2)), 0),
+            source_id:utils.defaultVal(data.item_type, data.item_type, ''),
+            source_name:utils.defaultVal(source_id_map_name[data.item_type], source_id_map_name[data.item_type], ''),
+            sales_price_add:0,
+            sales_number_add:0,
+            update_time:utils.defaultVal(data.update_time, sd.format(data.update_time, 'YYYY-MM-DD HH:mm:ss'), ''),
+            sales_time:utils.defaultVal(data.sales_time, data.sales_time, ''),
+            detail_url:utils.defaultVal(data.detail_url, data.detail_url, ''),
+            statistics_date:utils.defaultVal(data.statistics_date, data.statistics_date, '')
+        };
+        if(utils.empty(goods.goods_id)){
+            goods.goods_id = data.product_id;
+        }
+        switch(source){
+            case constants.SOURCE_DETAIL:
+                goods.sales_number_add = utils.defaultVal(data.sales_number_add,data.sales_number_add,0);
+                if(utils.in_array(time_type, [constants.TIME_TYPE_WEEK, constants.TIME_TYPE_MONTH])){
+                    goods.sales_price_add = utils.defaultVal(data.sales_price_sum_add,data.sales_price_sum_add/100,0);
+                }else{
+                    if(!utils.empty(goods.sales_number_add) && !utils.empty(goods.min_price)){
+                        goods.sales_price_add = parseFloat((goods.sales_number_add * goods.min_price).toFixed(2));
+                    }
+                }
+                break;
+            default:
+                goods.sales_number_add = utils.defaultVal(data.sales_number_add_sum,data.sales_number_add_sum,0);
+                if(utils.in_array(time_type, [constants.TIME_TYPE_WEEK, constants.TIME_TYPE_MONTH])){
+                    goods.sales_price_add = utils.defaultVal(data.sales_price_sum,data.sales_price_sum/100,0);
+                }else{
+                    if(!utils.empty(goods.sales_number_add) && !utils.empty(goods.min_price)){
+                        goods.sales_price_add = parseFloat((goods.sales_number_add * goods.min_price).toFixed(2));
+                    }
+                }
+                break;
+        }
+        return goods;
     }
 }

@@ -90,6 +90,30 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await api.portrait(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/dyshop_overview',
+                options: routes_config.dyshop_overview(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.dyshop_overview(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/live_list',
+                options: routes_config.live_list(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.live_list(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/goods_list',
+                options: routes_config.goods_list(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.goods_list(request,microtime());
+                },
             }
         ]);
     }
