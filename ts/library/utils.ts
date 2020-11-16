@@ -41,17 +41,20 @@ export module utils {
     export function defaultVal(target:any, trueVal:any, falseVal:any){
         return !empty(target)?trueVal:falseVal;
     }
-    export function getAsyncRequest(url: string, params:any) {
+    export function getAsyncRequest(url: string, params:any, headers:any=null) {
         return new Promise<string>(async(success, reject) => {
             if(!empty(params)){
                 let str = ToUrlParams(params);
                 url += `?${str}`;
             }
+            
             let option:any = {
                 url: url,
                 timeout: 20000
             }
-            
+            if(!utils.empty(headers)){
+                option['headers'] = headers;
+            }
             request.get(option, (err:any, res:any, body:any) => {
                 if (err) {
                     // reject(err)

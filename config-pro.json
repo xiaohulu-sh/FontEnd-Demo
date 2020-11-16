@@ -22,5 +22,7 @@
     "server_url_seven":"http://121.10.141.33:5007",
     "server_url_eight":"http://121.10.141.33:5008",
     "server_url_nine":"http://121.10.141.33:50010",
-    "server_url_ten":"http://121.10.141.33:5011"
+    "server_url_ten":"http://121.10.141.33:5011",
+    "core_appid":"a4a8f83e-3aec-4e71-9e79-533245bb3638",
+    "core_appsecret":"49608416-4cd6-48fa-aac7-51e77e80ce8a"
 }

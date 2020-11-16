@@ -260,4 +260,20 @@ export module routes_config{
         }
     }
     
+    export function odata_get_anchor_info_batch(valid:string='payload'){
+        let val = Joi.object({
+            batch_pid_rid:Joi.string().required().description('批量获取用户信息，格式：pid,rid|pid,rid')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata方式获取红人信息批量',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
 }

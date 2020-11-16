@@ -1,6 +1,7 @@
 
 import {routes_config} from './routes_config';
 import { api } from './controllers/api';
+import { odata } from './controllers/odata';
 
 export module routes {
     const QUERY = 'query';
@@ -113,6 +114,14 @@ export module routes {
                 options: routes_config.goods_list(QUERY),
                 handler: async(request:Request, h:any) => {
                     return await api.goods_list(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/odata_get_anchor_info_batch',
+                options: routes_config.odata_get_anchor_info_batch(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_get_anchor_info_batch(request,microtime());
                 },
             }
         ]);
