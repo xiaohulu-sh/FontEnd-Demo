@@ -2297,4 +2297,64 @@ export module api{
         }
         return goods;
     }
+    /**
+     * 通过红人获取公会信息（批量）
+     * @param request 
+     * @param microtime 
+     */
+    export async function get_guild_info_by_anchor(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let batch_pid_rid = query.batch_pid_rid;
+            paramsCode = md5(`${route}|${batch_pid_rid}`);
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/core-data/api/v1/coreguildByAnchor`,{
+                batch_pid_rid:batch_pid_rid
+            },{
+                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
+                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+            })
+            let ret = JSON.parse(res);
+            if(ret.status == 200 && !utils.empty(ret.data)){
+                let data = ret.data;
+                response = data;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
 }

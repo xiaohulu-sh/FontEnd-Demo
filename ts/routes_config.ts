@@ -262,7 +262,7 @@ export module routes_config{
     
     export function odata_get_anchor_info_batch(valid:string='payload'){
         let val = Joi.object({
-            batch_pid_rid:Joi.string().required().description('批量获取用户信息，格式：pid,rid|pid,rid')
+            batch_pid_rid:Joi.string().required().description('格式：pid,rid|pid,rid')
         });
         let obj:any = {};
         obj[valid] = val;
@@ -271,6 +271,40 @@ export module routes_config{
         };
         return {
             description: 'odata方式获取红人信息批量',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
+    export function odata_get_tag(valid:string='payload'){
+        let val = Joi.object({
+            tags:Joi.string().required().description('批量tag号')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata获取tag对照',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
+    export function get_guild_info_by_anchor(valid:string='payload'){
+        let val = Joi.object({
+            batch_pid_rid:Joi.string().required().description('格式：pid,rid|pid,rid')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '通过红人获取公会信息（批量）',
             notes: 'method:get',
             tags: ['api'],
             validate:obj

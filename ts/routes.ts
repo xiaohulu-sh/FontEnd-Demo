@@ -123,6 +123,22 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await odata.odata_get_anchor_info_batch(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/odata_get_tag',
+                options: routes_config.odata_get_tag(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_get_tag(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/get_guild_info_by_anchor',
+                options: routes_config.get_guild_info_by_anchor(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.get_guild_info_by_anchor(request,microtime());
+                },
             }
         ]);
     }
