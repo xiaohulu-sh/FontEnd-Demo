@@ -7,8 +7,6 @@ const results = require('../../results.json');
 const sd = require('silly-datetime');
 const md5 = require('md5');
 import { constants } from '../library/constants';
-import { emit } from 'process';
-import { constant } from 'async';
 
 export module api{
     /**
@@ -22,8 +20,8 @@ export module api{
         let route = request.path;
         let paramsCode = '';
         let response:any = {
-            // live_basic_data:{},
-            // video_basic_data:{}
+            live_basic_data:{},
+            video_basic_data:{}
         };
         try{
             if(method == 'get'){
@@ -43,38 +41,18 @@ export module api{
                     resTime:utils.microtime()
                 });
             }
-            
-            //短视频数据获取
-            let video_res:any = await utils.postAsyncRequest(`${config['core_host']}/apis/cloud/api/v1/shortvideo/author/detail/get`, {
-                platId:platform,
-                roomId:roomid
-            },{
-                'Content-Type':'application/json'
-            },"body");
-            let video_ret = JSON.parse(video_res);
-            if(video_ret.code == 0 && !utils.empty(video_ret.data)){
-                let data = video_ret.data;
-                if(!utils.empty(data)){
-                    response = {
-                        platform:platform,
-                        roomid:roomid,
-                        gender:data.gender,
-                        fans_num:data.fans_num,
-                        description:data.description,
-                        user_id:data.user_id,
-                        favorited_num:data.favorited_num,
-                        nickname:data.nickname,
-                        avatar:data.avatar,
-                        location_name:data.location_name,
-                        video_num:data.video_num,
-                        tagName:data.tagName,
-                        custom_verify:data.custom_verify
-                    };
-                }else{
-                    await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_middle_t, JSON.stringify(response));
-                }
-            }else{
-                await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                let basic_info = await dy_basic_info(constants.LIVE_DOUYIN_PLAT_ID, platform, roomid);
+                let live_basic_data = dy_live_basic_data_processor(basic_info.live_basic_data, basic_info.live_count_data,basic_info.live_rank);
+                let video_basic_data = video_basic_count_data_processor(basic_info.video_basic_data, basic_info.video_count_data);
+                response.live_basic_data = live_basic_data;
+                response.video_basic_data = video_basic_data;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                let basic_info = await ks_basic_info(constants.LIVE_KUAISHOU_PLAT_ID, platform, roomid);
+                let live_basic_data = ks_live_basic_data_processor(basic_info.live_data,basic_info.baike_data, basic_info.shop_data,constants.LIVE_DOUYIN_PLAT_ID,roomid);
+                let video_basic_data = video_basic_count_data_processor(basic_info.video_basic_data, basic_info.video_count_data);
+                response.live_basic_data = live_basic_data;
+                response.video_basic_data = video_basic_data;
             }
             await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
@@ -95,6 +73,230 @@ export module api{
                 console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
                 return utils.responseCommon(results['ERROR'], null, {});
             }
+        }
+    }
+    function video_basic_count_data_processor(basic_data:any, count_data:any = {}){
+        let res:any = {
+            nickname:utils.defaultVal(basic_data.nickname, basic_data.nickname, ''),
+            avatar:utils.defaultVal(basic_data.avatar, basic_data.avatar, ''),
+            sex:utils.defaultVal(basic_data.gender, basic_data.gender, 0),
+            age:utils.defaultVal(basic_data.age, basic_data.age, 0),
+            location:utils.defaultVal(basic_data.location_name, basic_data.location_name, ''),
+            description:utils.defaultVal(basic_data.description, basic_data.description, ''),
+            tagName:utils.defaultVal(basic_data.tagName, basic_data.tagName, ''),
+            certification:utils.defaultVal(basic_data.certification, basic_data.certification, ''),
+            room_id:utils.defaultVal(basic_data.room_id, basic_data.room_id, ''),
+            display_id:utils.defaultVal(basic_data.unique_id, basic_data.unique_id, utils.defaultVal(basic_data.user_id, basic_data.user_id,'')),
+            is_live:utils.defaultVal(basic_data.is_live, basic_data.is_live, 0),
+            user_source_link:utils.defaultVal(basic_data.source_link, basic_data.source_link, ''),
+            live_source_link:utils.defaultVal(basic_data.live_source_link, basic_data.live_source_link, ''),
+            fans_num:utils.defaultVal(basic_data.fans_num, basic_data.fans_num, 0),
+            favorited_num:utils.defaultVal(basic_data.favorited_num, basic_data.favorited_num, 0),
+            follow_num:utils.defaultVal(basic_data.follow_num, basic_data.follow_num, 0),
+            plat_rank:utils.defaultVal(count_data.plat_rank, count_data.plat_rank, ''),
+            super_rate:utils.defaultVal(count_data.super_rate, count_data.super_rate+'%', ''),
+            favorited_comment_rate:utils.defaultVal(count_data.favorited_comment_rate, count_data.favorited_comment_rate, ''),
+            xhl_index:utils.defaultVal(count_data.xhl_index, count_data.xhl_index, 0),
+        };
+        if(res.certification=='true'){
+            res.certification = '已认证';
+        }else if(res.certification=='false'){
+            res.certification = '';
+        }
+        if(utils.empty(res.description) && res.room_id == '4195355415549012'){
+            res.description = '前锤子科技CEO，现任交个朋友科技首席推荐官';
+        }
+        return res;
+    }
+
+    function ks_live_basic_data_processor(basic_data:any, baike_data:any = {}, shop_data:any = {}, plat_id:number=0, room_id:string=''){
+        let res:any = {
+            nickname:utils.defaultVal(basic_data.emcee, basic_data.emcee, utils.defaultVal(shop_data.nickname, shop_data.nickname, '')),
+            sex:utils.defaultVal(shop_data.gender, shop_data.gender, 0),
+            age:utils.defaultVal(shop_data.age, shop_data.age, 0),
+            location:utils.defaultVal(shop_data.location, shop_data.location, ''),
+            display_id:utils.defaultVal(shop_data.display_id, shop_data.display_id, ''),
+            is_live:utils.defaultVal(shop_data.is_live, shop_data.is_live, 0),
+            user_source_link:utils.defaultVal(basic_data.home_source_link, basic_data.home_source_link, utils.defaultVal(shop_data.user_source_link, shop_data.user_source_link, '')),
+            live_source_link:utils.defaultVal(basic_data.source_link, basic_data.source_link, utils.defaultVal(shop_data.live_source_link, shop_data.live_source_link, '')),
+            virtual_coin:utils.defaultVal(shop_data.dyValue, shop_data.dyValue, 0),
+            fans_num:utils.defaultVal(basic_data.follow_number, basic_data.follow_number, utils.defaultVal(shop_data.fansCount, shop_data.fansCount, 0)),
+            online_viewer_num:utils.defaultVal(shop_data.onlineViewer, shop_data.onlineViewer, 0),
+            total_viewer_num:utils.defaultVal(shop_data.totalViewer, shop_data.totalViewer, 0),
+            field:utils.defaultVal(shop_data.field, shop_data.field, ''),
+            tagName:utils.defaultVal(baike_data.labels, baike_data.labels, ''),
+            description:utils.defaultVal(baike_data.introduction, baike_data.introduction, ''),
+            xhl_index:'',
+            douyin_rank:''
+        };
+        res.avatar = `https://xhlcdn.xiaohulu.com/avatar/${plat_id}/${room_id}`;
+        if(!utils.empty(basic_data.tagName)){
+            basic_data.tagName = baike_data.labels.split(',');
+        }
+        return res;
+    }
+    function dy_live_basic_data_processor(basic_data:any, count_data:any = {}, live_rank:number = 0){
+        let res:any = {
+            nickname:utils.defaultVal(basic_data.nickname, basic_data.nickname, ''),
+            avatar:utils.defaultVal(basic_data.head, basic_data.head, ''),
+            sex:utils.defaultVal(basic_data.gender, basic_data.gender, 0),
+            age:utils.defaultVal(basic_data.age, basic_data.age, 0),
+            location:utils.defaultVal(basic_data.location, basic_data.location, ''),
+            description:utils.defaultVal(basic_data.introduce, basic_data.introduce, ''),
+            tagName:utils.defaultVal(basic_data.tagName, basic_data.tagName, ''),
+            display_id:utils.defaultVal(basic_data.display_id, basic_data.display_id, ''),
+            is_live:utils.defaultVal(basic_data.is_live, basic_data.is_live, 0),
+            user_source_link:utils.defaultVal(basic_data.user_source_link, basic_data.user_source_link, ''),
+            live_source_link:utils.defaultVal(basic_data.live_source_link, basic_data.live_source_link, ''),
+            field:utils.defaultVal(basic_data.field, basic_data.field, ''),
+            xhl_index:utils.defaultVal(count_data.xhl_index, count_data.xhl_index, 0),
+            douyin_rank:utils.defaultVal(live_rank, live_rank, 0),
+            virtual_coin:utils.defaultVal(basic_data.dyValue, parseFloat((basic_data.dyValue/10).toFixed(2)), 0),
+            online_viewer_num:utils.defaultVal(basic_data.onlineViewer, basic_data.onlineViewer, 0),
+            total_viewer_num:utils.defaultVal(basic_data.fansCount, basic_data.totalViewer, 0),
+        };
+        if(basic_data.is_live == 0){
+            basic_data.online_viewer_num = 0;
+        }
+        return res;
+    }
+    async function dy_basic_info(live_pid:number, video_pid:number, room_id:string){
+        let res:any = {
+            live_basic_data:{},
+            live_count_data:{},
+            live_rank:0,
+            video_basic_data:{},
+            video_count_data:{}
+        };
+        try {
+            let yesterday = sd.format(+new Date()-24*60*60*1000, 'YYYY-MM-DD');
+            let live_basic_data_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorInfoByPlatRoomIDSet`,{
+                plat_roomID_sets:`${live_pid},${room_id}`,
+            });
+            let live_basic_data_ret = JSON.parse(live_basic_data_res);
+            if(!utils.empty(live_basic_data_ret)){
+                res.live_basic_data = live_basic_data_ret[0];
+            }else{
+                res.live_basic_data = {};
+            }
+            let live_count_data_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorWeekAndMonthInfo`,{
+                plat_roomID_sets:`${live_pid},${room_id}`,
+                type:7,
+                date:yesterday
+            });
+            let live_count_data_ret = JSON.parse(live_count_data_res);
+            if(!utils.empty(live_count_data_ret)){
+                res.live_count_data = live_count_data_ret[0];
+            }else{
+                res.live_count_data = {};
+            }
+            let live_rank_res:any = await utils.getAsyncRequest(`${config['server_url_one']}/getBatchWholeNetworkRankingOfDay`,{
+                platroomIds:`${live_pid},${room_id}`,
+                date:yesterday
+            });
+            let live_rank_ret = JSON.parse(live_rank_res);
+            if(!utils.empty(live_rank_ret)){
+                live_rank_ret = live_rank_ret[0];
+                let live_rank = 0;
+                if(!utils.empty(live_rank_ret)){
+                    if(!utils.empty(live_rank_ret.rank)){
+                        live_rank = live_rank_ret.rank;
+                    }
+                }
+                res.live_rank = live_rank;
+            }else{
+                res.live_rank = 0;
+            }
+            let video_basic_data_res:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/detail/get`,{
+                platId:video_pid,
+                roomId:room_id
+            });
+            let video_basic_data_ret = JSON.parse(video_basic_data_res);
+            let video_basic_data = {};
+            if(video_basic_data_ret.code == 0 && !utils.empty(video_basic_data_ret.data)){
+                video_basic_data = video_basic_data_ret.data;
+            }
+            res.video_basic_data = video_basic_data;
+            let video_count_data_res:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/xhlscore/get`,{
+                platId:video_pid,
+                roomId:room_id
+            });
+            let video_count_data_ret = JSON.parse(video_count_data_res);
+            let video_count_data = {};
+            if(video_count_data_ret.code == 0 && !utils.empty(video_count_data_ret.data)){
+                video_count_data = video_count_data_ret.data;
+            }
+            res.video_count_data = video_count_data;
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return res;
+        }
+    }
+    async function ks_basic_info(live_pid:number, video_pid:number, room_id:string){
+        let res:any = {
+            shop_data:{},
+            live_data:{},
+            baike_data:{},
+            video_basic_data:{},
+            video_count_data:{}
+        };
+        try {
+            let shop_data_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorInfoByPlatRoomIDSet`,{
+                plat_roomID_sets:`${live_pid},${room_id}`,
+            });
+            let shop_data_ret = JSON.parse(shop_data_res);
+            if(!utils.empty(shop_data_ret)){
+                res.shop_data = shop_data_ret[0];
+            }else{
+                res.shop_data = {};
+            }
+            let live_data_res:any = await utils.getAsyncRequest(`${config['server_url_one']}/getAnchorInfobyPlatAndRoomID`,{
+                platID:live_pid,
+                roomID:room_id
+            });
+            if(!utils.empty(live_data_res)){
+                let live_data_ret = JSON.parse(live_data_res);
+                if(!utils.empty(live_data_ret)){
+                    res.live_data = live_data_ret;
+                }else{
+                    res.live_data = {};
+                }
+            }else{
+                res.live_data = {};
+            }
+            let baike_data_res:any = await utils.getAsyncRequest(`${config['server_url_eight']}/export/api/zhubo`,{
+                platID:live_pid,
+                roomID:room_id
+            });
+            let baike_data_ret = JSON.parse(baike_data_res);
+            if(baike_data_ret.code == 200){
+                res.baike_data = baike_data_ret.data;
+            }
+            let video_basic_data_res:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/detail/get`,{
+                platId:video_pid,
+                roomId:room_id
+            });
+            let video_basic_data_ret = JSON.parse(video_basic_data_res);
+            let video_basic_data = {};
+            if(video_basic_data_ret.code == 0 && !utils.empty(video_basic_data_ret.data)){
+                video_basic_data = video_basic_data_ret.data;
+            }
+            res.video_basic_data = video_basic_data;
+            let video_count_data_res:any = await utils.getAsyncRequest(`${config['server_url_four']}/api/v1/shortvideo/author/xhlscore/get`,{
+                platId:video_pid,
+                roomId:room_id
+            });
+            let video_count_data_ret = JSON.parse(video_count_data_res);
+            let video_count_data = {};
+            if(video_count_data_ret.code == 0 && !utils.empty(video_count_data_ret.data)){
+                video_count_data = video_count_data_ret.data;
+            }
+            res.video_count_data = video_count_data;
+        } catch (error) {
+            console.log(error);
+        }finally{
+            return res;
         }
     }
     /**

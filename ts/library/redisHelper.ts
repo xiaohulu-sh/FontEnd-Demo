@@ -5,9 +5,9 @@ export class redisHelper{
     private static redisClient:redis.RedisClient;
     private static redis_conf:any;
 
-    public static _expire_t = 129600;//一天半
+    public static _expire_t = 300;//一天半
     public static _expire_middle_t = 43200;//12h
-    public static _expire_short_t = 1800;
+    public static _expire_short_t = 300;
 
     public static P_DATA_POOL = 'dp_';
 
