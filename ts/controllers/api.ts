@@ -1810,12 +1810,12 @@ export module api{
                                 }
                                 for(let i = 0; i < data.location.length; i++){
                                     let location_name = data.location[i].location_name;
-                                    location_name.replace(/省/g,'');
-                                    location_name.replace(/自治区/g,'');
-                                    location_name.replace(/回族/g,'');
-                                    location_name.replace(/壮族/g,'');
-                                    location_name.replace(/维吾尔/g,'');
-                                    location_name.replace(/特别行政区/g,'');
+                                    location_name = location_name.replace(/省/g,'');
+                                    location_name = location_name.replace(/自治区/g,'');
+                                    location_name = location_name.replace(/回族/g,'');
+                                    location_name = location_name.replace(/壮族/g,'');
+                                    location_name = location_name.replace(/维吾尔/g,'');
+                                    location_name = location_name.replace(/特别行政区/g,'');
                                     response[location_name] = {
                                         count:data.location[i].count,
                                         percent:`${parseFloat((parseFloat((data.location[i].count/sum).toFixed(4))*100).toFixed(2))}%`
