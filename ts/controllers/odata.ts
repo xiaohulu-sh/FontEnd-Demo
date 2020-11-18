@@ -375,7 +375,7 @@ export module odata{
                         guildname:'',
                         tags:[],
                         tagIds:tagsTemp,
-                        pid:data[i].PlatformId,
+                        pid:data[i].Platform==301?201:202,
                         rid:data[i].RoomId,
                         nickname:utils.defaultVal(data[i].Nickname, data[i].Nickname, utils.defaultVal(data[i].Nickname2, data[i].Nickname2,'')),
                         LocationName:utils.defaultVal(data[i].LocationName, data[i].LocationName, utils.defaultVal(data[i].LocationName2, data[i].LocationName2,'')),
