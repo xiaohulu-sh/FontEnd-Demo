@@ -310,4 +310,21 @@ export module routes_config{
             validate:obj
         }
     }
+    
+    export function clear_cache(valid:string='payload'){
+        let val = Joi.object({
+            keys:Joi.string().required().description('keys名称')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '清理缓存(系统级功能，不可胡乱使用)',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
 }

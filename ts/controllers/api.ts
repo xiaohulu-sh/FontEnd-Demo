@@ -2559,4 +2559,42 @@ export module api{
             }
         }
     }
+
+    export async function clear_cache(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let keys = query.keys;
+
+            let keysRes:any = await redisHelper.keys(keys);
+            
+            if(!utils.empty(keysRes)){
+                await redisHelper.del(keysRes);
+            }
+
+            return utils.responseCommon(results['SUCCESS'], null, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
 }

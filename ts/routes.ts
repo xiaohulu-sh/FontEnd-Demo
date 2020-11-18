@@ -139,6 +139,14 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await api.get_guild_info_by_anchor(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/clear_cache',
+                options: routes_config.clear_cache(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.clear_cache(request,microtime());
+                },
             }
         ]);
     }
