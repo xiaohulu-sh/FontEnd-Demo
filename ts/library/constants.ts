@@ -5,6 +5,9 @@ export class constants{
     public static LIVE_KUAISHOU_PLAT_ID = 59;
     public static VIDEO_KUAISHOU_PLAT_ID = 202;
 
+    public static DOUYIN_EXTEND_PLAT_ID = 301;
+    public static KUAISHOU_EXTEND_PLAT_ID = 302;
+
     public static TIME_TYPE_RECENT_TIME = 'recent_time';
 
     public static SOURCE_LIST = 'list';

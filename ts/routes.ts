@@ -142,6 +142,22 @@ export module routes {
             },
             {
                 method: ['GET'],
+                path: '/v1_api/odata_get_tag_classify',
+                options: routes_config.odata_get_tag_classify(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_get_tag_classify(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/odata_anchor_list_by_type',
+                options: routes_config.odata_anchor_list_by_type(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_anchor_list_by_type(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
                 path: '/v1_api/clear_cache',
                 options: routes_config.clear_cache(QUERY),
                 handler: async(request:Request, h:any) => {

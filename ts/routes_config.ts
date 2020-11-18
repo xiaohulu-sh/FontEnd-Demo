@@ -294,6 +294,46 @@ export module routes_config{
         }
     }
     
+    export function odata_get_tag_classify(valid:string='payload'){
+        let val = Joi.object({
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata获取tag分类列表',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
+    export function odata_anchor_list_by_type(valid:string='payload'){
+        let val = Joi.object({
+            plat_type:Joi.number().default().description('平台类型：空=》全部 201.抖音 202.快手'),
+            cate_type:Joi.number().default().description('创作类型：空=》全部 ，tagid'),
+            province:Joi.string().default().description('省份(传名称)'),
+            region:Joi.string().default().description('地区（传名称）'),
+            gender:Joi.number().default().description('性别：空=》不限，1.男2.女'),
+            fans_age:Joi.string().default().description('账号粉丝年龄：空=》一个都不选，1.18岁以下 2.18-25 3.26-32 4.33-39 5.40以上（可批量，英文逗号相隔）'),
+            fansnum:Joi.string().default().description('粉丝数：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            page:Joi.number().default(1).description('页号'),
+            limit:Joi.number().default(30).description('分页参数，指定获取数量(暂定最大30个)'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata按创作类型筛选红人',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function get_guild_info_by_anchor(valid:string='payload'){
         let val = Joi.object({
             batch_pid_rid:Joi.string().required().description('格式：pid,rid|pid,rid')
