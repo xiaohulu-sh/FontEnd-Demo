@@ -215,7 +215,7 @@ export module odata{
         let response:any = {
             total:0,
             list:[],
-            currect_page:1,
+            current_page:1,
             last_page:1
         };
         try{
@@ -242,7 +242,7 @@ export module odata{
             if(limit <= 0){
                 limit = 30;
             }
-            paramsCode = md5(`${route}|${plat_type}|${cate_type}|${province}|${region}|${gender}|${fans_age}|${fansnum}`);
+            paramsCode = md5(`${route}|${plat_type}|${cate_type}|${province}|${region}|${gender}|${fans_age}|${fansnum}|${page}|${limit}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
             if(!utils.empty(cacheRes)){
@@ -355,7 +355,7 @@ export module odata{
             let ret = JSON.parse(res);
             let total = ret['@odata.count'];
             response.total = total;
-            response.currect_page = page;
+            response.current_page = page;
             let lastpage = Math.ceil(total/limit);
             response.last_page = lastpage;
             if(!utils.empty(ret.value)){
