@@ -50,8 +50,8 @@ export module odata{
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/MvJdAnchors`,{
                 '$filter':paramsVal
             },{
-                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
             })
             let ret = JSON.parse(res);
             if(ret.code == undefined){
@@ -112,8 +112,8 @@ export module odata{
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/anchortags`,{
                 '$filter':paramsVal
             },{
-                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
             })
             let ret = JSON.parse(res);
             if(ret.code == undefined){
@@ -171,8 +171,8 @@ export module odata{
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/anchortags`,{
                 '$filter':`Lv eq 1`
             },{
-                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
             });
             let ret = JSON.parse(res);
             if(ret.code == undefined){
@@ -349,8 +349,8 @@ export module odata{
                 '$skip':page*limit-limit,
                 '$top':limit
             },{
-                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
             });
             let ret = JSON.parse(res);
             let total = ret['@odata.count'];
@@ -399,8 +399,8 @@ export module odata{
                 let guildRes:any = await utils.getAsyncRequest(`${config['core_host']}/apis/core-data/api/v1/coreguildByAnchor`,{
                     batch_pid_rid:batch_pid_rid.join('|')
                 },{
-                    'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                    'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                    'app-id':config['core_appid'],
+                    'app-secret':config['core_appsecret']
                 })
                 let guildRet = JSON.parse(guildRes);
                 let guildMap:any = {};
@@ -413,8 +413,8 @@ export module odata{
                 let tagListRes:any = await utils.getAsyncRequest(`${config['core_host']}/odata/anchortags`,{
                     '$filter':paramsVal
                 },{
-                    'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                    'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                    'app-id':config['core_appid'],
+                    'app-secret':config['core_appsecret']
                 })
                 let tagListRet = JSON.parse(tagListRes);
                 if(tagListRet.code == undefined){

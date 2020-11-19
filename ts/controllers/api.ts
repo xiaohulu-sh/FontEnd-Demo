@@ -2530,8 +2530,8 @@ export module api{
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/core-data/api/v1/coreguildByAnchor`,{
                 batch_pid_rid:batch_pid_rid
             },{
-                'app-id':'a4a8f83e-3aec-4e71-9e79-533245bb3638',
-                'app-secret':'49608416-4cd6-48fa-aac7-51e77e80ce8a'
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
             })
             let ret = JSON.parse(res);
             if(ret.status == 200 && !utils.empty(ret.data)){
