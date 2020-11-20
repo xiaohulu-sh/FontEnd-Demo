@@ -371,7 +371,7 @@ export module odata{
                         tagsTemp = data[i].TagByH.split(',');
                         tags = tags.concat(tagsTemp);
                     }
-                    batch_pid_rid.push(`${data[i].PlatformId},${data[i].RoomId}`);
+                    batch_pid_rid.push(`${data[i].Platform==301?201:202},${data[i].RoomId}`);
                     list.push({
                         guildname:'',
                         tags:[],
@@ -387,7 +387,7 @@ export module odata{
                         price_21_60s:utils.defaultVal(data[i].XtPrice2, data[i].XtPrice2, 0),
                         videonum:utils.defaultVal(data[i].VideoNum, data[i].VideoNum, 0),
                         new_fans_30:utils.defaultVal(data[i].NewFans30, data[i].NewFans30, 0),
-                        avatar:utils.defaultVal(data[i].Avatar, data[i].Avatar, utils.defaultVal(data[i].Avatar2, data[i].Avatar2, '')),
+                        avatar:utils.defaultVal(data[i].Avatar, data[i].Avatar, utils.defaultVal(data[i].Avatar2, data[i].Avatar2, `https://xhlcdn.xiaohulu.com/avatar/${data[i].PlatformId2}/${data[i].RoomId}`)),
                         fans_boy_count:utils.defaultVal(data[i].FanBoyCount, data[i].FanBoyCount, 0),
                         fans_girl_count:utils.defaultVal(data[i].FanGirlCount, data[i].FanGirlCount, 0),
                         fans_age_18:utils.defaultVal(data[i].FanAnalysisAge18, data[i].FanAnalysisAge18, 0),
