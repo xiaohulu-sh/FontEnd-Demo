@@ -47,7 +47,7 @@ export module utils {
                 let str = ToUrlParams(params);
                 url += `?${str}`;
             }
-            
+            console.log(url);
             let option:any = {
                 url: url,
                 timeout: 20000
