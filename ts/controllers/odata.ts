@@ -410,18 +410,20 @@ export module odata{
                 }
                 tags = utils.unique5(tags);
                 let tagMap:any = {};
-                let paramsVal = `id in (${tags.join(',')}) and Lv eq 1`;
-                let tagListRes:any = await utils.getAsyncRequest(`${config['core_host']}/odata/anchortags`,{
-                    '$filter':paramsVal
-                },{
-                    'app-id':config['core_appid'],
-                    'app-secret':config['core_appsecret']
-                })
-                let tagListRet = JSON.parse(tagListRes);
-                if(tagListRet.code == undefined){
-                    let tagListData = tagListRet.value;
-                    for(let i = 0 ; i < tagListData.length; i++){
-                        tagMap[tagListData[i].Id] = tagListData[i].TagName;
+                if(!utils.empty(tags)){
+                    let paramsVal = `id in (${tags.join(',')}) and Lv eq 1`;
+                    let tagListRes:any = await utils.getAsyncRequest(`${config['core_host']}/odata/anchortags`,{
+                        '$filter':paramsVal
+                    },{
+                        'app-id':config['core_appid'],
+                        'app-secret':config['core_appsecret']
+                    })
+                    let tagListRet = JSON.parse(tagListRes);
+                    if(tagListRet.code == undefined){
+                        let tagListData = tagListRet.value;
+                        for(let i = 0 ; i < tagListData.length; i++){
+                            tagMap[tagListData[i].Id] = tagListData[i].TagName;
+                        }
                     }
                 }
                 for(let o of Object.keys(list)){
