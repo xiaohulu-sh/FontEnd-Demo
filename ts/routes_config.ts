@@ -334,6 +334,22 @@ export module routes_config{
             validate:obj
         }
     }
+    export function odata_anchor_list_by_batch(valid:string='payload'){
+        let val = Joi.object({
+            batch_pid_rid:Joi.string().required().description('格式：pid,rid|pid,rid')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata批量获取红人相关信息',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function get_guild_info_by_anchor(valid:string='payload'){
         let val = Joi.object({
             batch_pid_rid:Joi.string().required().description('格式：pid,rid|pid,rid')

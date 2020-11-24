@@ -163,6 +163,14 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await api.clear_cache(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/odata_anchor_list_by_batch',
+                options: routes_config.odata_anchor_list_by_batch(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_anchor_list_by_batch(request,microtime());
+                },
             }
         ]);
     }
