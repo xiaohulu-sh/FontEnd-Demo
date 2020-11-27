@@ -627,11 +627,8 @@ export module odata{
             if(page <= 0){
                 page = 1;
             }
-            if(limit > 30){
-                limit = 30;
-            }
             if(limit <= 0){
-                limit = 30;
+                limit = 10;
             }
             paramsCode = md5(`${route}|${page}|${limit}`);
             
