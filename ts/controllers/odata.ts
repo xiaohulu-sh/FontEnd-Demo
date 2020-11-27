@@ -606,4 +606,80 @@ export module odata{
             }
         }
     }
+    
+    export async function odata_locationname_list(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {
+            total:0,
+            list:[]
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 30){
+                limit = 30;
+            }
+            if(limit <= 0){
+                limit = 30;
+            }
+            paramsCode = md5(`${route}|${page}|${limit}`);
+            
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/mvjdanchors`,{
+                '$filter':`locationname ne null and locationname ne ''`,
+                '$skip':page*limit-limit,
+                '$count':true,
+                '$top':limit,
+                '$select':'LocationName'
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            });
+
+            let ret = JSON.parse(res);
+            let total = ret['@odata.count'];
+            response.total = total;
+            if(ret.code == undefined){
+                let data = ret.value;
+                response.list = data;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
 }
