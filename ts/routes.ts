@@ -142,6 +142,14 @@ export module routes {
             },
             {
                 method: ['GET'],
+                path: '/v1_api/get_guild_detail_info_by_anchor',
+                options: routes_config.get_guild_detail_info_by_anchor(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.get_guild_detail_info_by_anchor(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
                 path: '/v1_api/odata_get_tag_classify',
                 options: routes_config.odata_get_tag_classify(QUERY),
                 handler: async(request:Request, h:any) => {

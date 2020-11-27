@@ -2559,7 +2559,66 @@ export module api{
             }
         }
     }
+    
+    /**
+     * 通过红人获取公会详细信息
+     * @param request 
+     * @param microtime 
+     */
+    export async function get_guild_detail_info_by_anchor(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let pid = query.pid;
+            let rid = query.rid;
+            paramsCode = md5(`${route}|${pid}|${rid}`);
 
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/core-data/api/v1/coreguild/by/${pid}/${rid}`,null,{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+            let ret = JSON.parse(res);
+            if(ret.status == 200 && !utils.empty(ret.data)){
+                let data = ret.data;
+                response = data;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
     export async function clear_cache(request:any, microtime:number){
         let query = null;
         let method = request.method;

@@ -385,6 +385,23 @@ export module routes_config{
         }
     }
     
+    export function get_guild_detail_info_by_anchor(valid:string='payload'){
+        let val = Joi.object({
+            pid:Joi.number().required().description('平台号'),
+            rid:Joi.string().required().description('房间号')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '通过红人获取公会详细信息',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function clear_cache(valid:string='payload'){
         let val = Joi.object({
             keys:Joi.string().required().description('keys名称')
