@@ -118,22 +118,6 @@ export module routes {
             },
             {
                 method: ['GET'],
-                path: '/v1_api/odata_get_anchor_info_batch',
-                options: routes_config.odata_get_anchor_info_batch(QUERY),
-                handler: async(request:Request, h:any) => {
-                    return await odata.odata_get_anchor_info_batch(request,microtime());
-                },
-            },
-            {
-                method: ['GET'],
-                path: '/v1_api/odata_get_tag',
-                options: routes_config.odata_get_tag(QUERY),
-                handler: async(request:Request, h:any) => {
-                    return await odata.odata_get_tag(request,microtime());
-                },
-            },
-            {
-                method: ['GET'],
                 path: '/v1_api/get_guild_info_by_anchor',
                 options: routes_config.get_guild_info_by_anchor(QUERY),
                 handler: async(request:Request, h:any) => {
@@ -150,22 +134,6 @@ export module routes {
             },
             {
                 method: ['GET'],
-                path: '/v1_api/odata_get_tag_classify',
-                options: routes_config.odata_get_tag_classify(QUERY),
-                handler: async(request:Request, h:any) => {
-                    return await odata.odata_get_tag_classify(request,microtime());
-                },
-            },
-            {
-                method: ['GET'],
-                path: '/v1_api/odata_anchor_list_by_type',
-                options: routes_config.odata_anchor_list_by_type(QUERY),
-                handler: async(request:Request, h:any) => {
-                    return await odata.odata_anchor_list_by_type(request,microtime());
-                },
-            },
-            {
-                method: ['GET'],
                 path: '/v1_api/clear_cache',
                 options: routes_config.clear_cache(QUERY),
                 handler: async(request:Request, h:any) => {
@@ -174,18 +142,10 @@ export module routes {
             },
             {
                 method: ['GET'],
-                path: '/v1_api/odata_anchor_list_by_batch',
-                options: routes_config.odata_anchor_list_by_batch(QUERY),
+                path: '/v1_api/odata_tag_list',
+                options: routes_config.odata_tag_list(QUERY),
                 handler: async(request:Request, h:any) => {
-                    return await odata.odata_anchor_list_by_batch(request,microtime());
-                },
-            },
-            {
-                method: ['GET'],
-                path: '/v1_api/odata_locationname_list',
-                options: routes_config.odata_locationname_list(QUERY),
-                handler: async(request:Request, h:any) => {
-                    return await odata.odata_locationname_list(request,microtime());
+                    return await odata.odata_tag_list(request,microtime());
                 },
             }
         ]);
