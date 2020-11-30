@@ -2360,7 +2360,7 @@ export module api{
             response.current_page = page;
             response.data = response.data.slice(start, start+limit);
 
-            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,
                 path:route,
@@ -2368,7 +2368,7 @@ export module api{
             });
         }catch(e){
             console.log(e);
-            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
             try{
                 let data = JSON.parse(e.message);
                 return utils.responseCommon(data, null, {
