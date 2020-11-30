@@ -2280,7 +2280,9 @@ export module api{
         let paramsCode = '';
         let response:any = {
             data:[],
-            total:0
+            total:0,
+            current_page:1,
+            last_page:1
         };
         try{
             if(method == 'get'){
@@ -2354,9 +2356,11 @@ export module api{
             }
             response.total = utils.defaultVal(response.data, response.data.length, 0);
             let start = (page-1)*limit;
+            response.last_page = Math.ceil(response.total/limit);
+            response.current_page = page;
             response.data = response.data.slice(start, start+limit);
 
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,
                 path:route,
@@ -2364,7 +2368,7 @@ export module api{
             });
         }catch(e){
             console.log(e);
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
             try{
                 let data = JSON.parse(e.message);
                 return utils.responseCommon(data, null, {
@@ -2379,6 +2383,7 @@ export module api{
         }
     }
     async function live_goods_list_detail(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY,price:string){
+        let list:any = [];
         try {
             if(!utils.empty(data_list)){
                 data_list = data_list.slice(0, 300);
@@ -2443,17 +2448,19 @@ export module api{
                         data_list[i].detail_url = utils.defaultVal(data_list[i].detail_url,data_list[i].detail_url,utils.defaultVal(goods_list_detail[data_list[i].promotion_id].detail_url,goods_list_detail[data_list[i].promotion_id].detail_url,''));
                     }
                     data_list[i] = goods_list_processor(data_list[i], source, time_type);
+                    list.push(data_list[i]);
                 }
             }
-            return data_list;
+            return list;
         } catch (error) {
             console.log(error);
         }finally{
-            return data_list;
+            return list;
         }
     }
 
     async function live_goods_list_detail_product_id(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY,price:string){
+        let list:any = [];
         try {
             if(!utils.empty(data_list)){
                 data_list = data_list.slice(0, 300);
@@ -2517,13 +2524,14 @@ export module api{
                         data_list[i].seckill_min_price = !utils.empty(goods_list_detail[data_list[i].product_id].seckill_min_price)?goods_list_detail[data_list[i].product_id].seckill_min_price:'';
                     }
                     data_list[i] = goods_list_processor(data_list[i], source, time_type);
+                    list.push(data_list[i]);
                 }
             }
-            return data_list;
+            return list;
         } catch (error) {
             console.log(error);
         }finally{
-            return data_list;
+            return list;
         }
     }
     function goods_list_processor(data:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
