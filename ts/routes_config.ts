@@ -244,8 +244,11 @@ export module routes_config{
         let val = Joi.object({
             platform:Joi.number().required().description('平台号'),
             roomid:Joi.string().required().description('房间id'),
+            price:Joi.string().default().description('价格区间：空=》不限，其余字符串传递格式（如100元-500元：100-500，如500元以上：500-0,如50元以下：0-50）'),
             time_type:Joi.string().required().allow(['recent_time','day']).description('时间类型：recent_time（代表近日选择）/day（代表日期选择）'),
             time:Joi.string().required().description('【recent_time下选择】：today/yesterday/recent_7/recent_30 【day下选择】：日期格式YYYY-MM-DD,去除今日昨日的往前推8天时间'),
+            page:Joi.number().default(1).description('页号'),
+            limit:Joi.number().default(10).description('获取数量，每页最多10')
         });
         let obj:any = {};
         obj[valid] = val;

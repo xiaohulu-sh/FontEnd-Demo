@@ -7,6 +7,8 @@ const results = require('../../results.json');
 const sd = require('silly-datetime');
 const md5 = require('md5');
 import { constants } from '../library/constants';
+import { illegal } from '@hapi/boom';
+import { head } from 'request';
 
 export module api{
     /**
@@ -2290,7 +2292,19 @@ export module api{
             let roomid = query.roomid;
             let time_type = query.time_type;
             let time = query.time;
-            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}`);
+            let price = query.price;
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 10){
+                limit = 10;
+            }
+            if(limit <= 0){
+                limit = 10;
+            }
+            paramsCode = md5(`${route}|${platform}|${roomid}|${time_type}|${time}|${price}|${page}|${limit}`);
 
             if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
                 platform = constants.LIVE_DOUYIN_PLAT_ID;
@@ -2323,7 +2337,7 @@ export module api{
                 let goods_list = !utils.empty(goods_list_ret.data)?goods_list_ret.data:[];
                 rank_type = constants.TIME_TYPE_DAY
                 if(!utils.empty(goods_list)){
-                    response.data = await live_goods_list_detail_product_id(goods_list, constants.SOURCE_DETAIL, rank_type);
+                    response.data = await live_goods_list_detail_product_id(goods_list, constants.SOURCE_DETAIL, rank_type,price);
                 }
             }else{
                 let goods_list_res:any = await utils.getAsyncRequest(`${config['server_url_ten']}/getAnchorGoodsSaleInfoByPlatRoomDate`,{
@@ -2335,10 +2349,12 @@ export module api{
                 let goods_list_ret = JSON.parse(goods_list_res);
                 let goods_list = !utils.empty(goods_list_ret.data)?goods_list_ret.data:[];
                 if(!utils.empty(goods_list)){
-                    response.data = await live_goods_list_detail(goods_list, constants.SOURCE_DETAIL, rank_type);
+                    response.data = await live_goods_list_detail(goods_list, constants.SOURCE_DETAIL, rank_type,price);
                 }
             }
             response.total = utils.defaultVal(response.data, response.data.length, 0);
+            let start = (page-1)*limit;
+            response.data = response.data.slice(start, start+limit);
 
             await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
@@ -2362,7 +2378,7 @@ export module api{
             }
         }
     }
-    async function live_goods_list_detail(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
+    async function live_goods_list_detail(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY,price:string){
         try {
             if(!utils.empty(data_list)){
                 data_list = data_list.slice(0, 300);
@@ -2385,7 +2401,39 @@ export module api{
                 for(let i = 0; i < data.length; i++){
                     goods_list_detail[data[i].promotion_id] = data[i];
                 }
+                let priceAry:any = [];
+                if(!utils.empty(price)){
+                    priceAry = price.split('-');
+                }
                 for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(priceAry)){
+                        let headVal = parseInt(priceAry[0]);
+                        let tailVal = parseInt(priceAry[1]);
+                        let mini_price = utils.defaultVal(data_list[i].min_price, parseFloat((data_list[i].min_price/100).toFixed(2)), 0);
+                        if(tailVal == 0){
+                            if(mini_price < headVal){
+                                continue;
+                            }
+                        }else if(headVal == 0){
+                            if(mini_price > tailVal){
+                                continue;
+                            }
+                        }else{
+                            if(headVal > tailVal){
+                                if(mini_price >= tailVal && mini_price <= headVal){
+    
+                                }else{
+                                    continue;
+                                }
+                            }else{
+                                if(mini_price >= headVal && mini_price <= tailVal){
+    
+                                }else{
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                     if(!utils.empty(goods_list_detail[data_list[i].promotion_id])){
                         data_list[i].goods_image = !utils.empty(goods_list_detail[data_list[i].promotion_id].cover)?goods_list_detail[data_list[i].promotion_id].cover:'';
                         data_list[i].short_title = utils.empty(data_list[i].short_title)?goods_list_detail[data_list[i].promotion_id].short_title:data_list[i].short_title;
@@ -2405,7 +2453,7 @@ export module api{
         }
     }
 
-    async function live_goods_list_detail_product_id(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY){
+    async function live_goods_list_detail_product_id(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY,price:string){
         try {
             if(!utils.empty(data_list)){
                 data_list = data_list.slice(0, 300);
@@ -2428,7 +2476,39 @@ export module api{
                 for(let i = 0; i < data.length; i++){
                     goods_list_detail[data[i].product_id] = data[i];
                 }
+                let priceAry:any = [];
+                if(!utils.empty(price)){
+                    priceAry = price.split('-');
+                }
                 for(let i = 0; i < data_list.length; i++){
+                    if(!utils.empty(priceAry)){
+                        let headVal = parseInt(priceAry[0]);
+                        let tailVal = parseInt(priceAry[1]);
+                        let mini_price = utils.defaultVal(data_list[i].min_price, parseFloat((data_list[i].min_price/100).toFixed(2)), 0);
+                        if(tailVal == 0){
+                            if(mini_price < headVal){
+                                continue;
+                            }
+                        }else if(headVal == 0){
+                            if(mini_price > tailVal){
+                                continue;
+                            }
+                        }else{
+                            if(headVal > tailVal){
+                                if(mini_price >= tailVal && mini_price <= headVal){
+    
+                                }else{
+                                    continue;
+                                }
+                            }else{
+                                if(mini_price >= headVal && mini_price <= tailVal){
+    
+                                }else{
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                     if(!utils.empty(goods_list_detail[data_list[i].product_id])){
                         data_list[i].goods_image = !utils.empty(goods_list_detail[data_list[i].product_id].cover)?goods_list_detail[data_list[i].product_id].cover:'';
                         data_list[i].short_title = utils.empty(data_list[i].short_title)?goods_list_detail[data_list[i].product_id].short_title:data_list[i].short_title;
