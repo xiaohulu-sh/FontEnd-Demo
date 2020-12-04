@@ -616,7 +616,7 @@ export module api{
                             video_view_count:!utils.empty(data[i].video_view_count)?data[i].video_view_count:0,
                             video_desc:data[i].video_desc,
                             video_url:data[i].video_share_url,
-                            video_create_time:!utils.empty(data[i].video_create_time)?sd.format(data[i].video_create_time, 'YYYY-MM-DD'):'',
+                            video_create_time:(data[i].video_create_time==null||data[i].video_create_time=='')?'':sd.format(data[i].video_create_time, 'YYYY-MM-DD'),
                             video_screen_pic:video_screen_pic
                         });
                     }
