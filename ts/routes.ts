@@ -147,6 +147,14 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await odata.odata_tag_list(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/odata_filter_tags',
+                options: routes_config.odata_filter_tags(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_filter_tags(request,microtime());
+                },
             }
         ]);
     }
