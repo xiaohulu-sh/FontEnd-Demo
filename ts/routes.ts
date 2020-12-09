@@ -110,6 +110,22 @@ export module routes {
             },
             {
                 method: ['GET'],
+                path: '/v1_api/goods_recent30_brand_info',
+                options: routes_config.goods_recent30_brand_info(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.goods_recent30_brand_info(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/goods_list_recent30',
+                options: routes_config.goods_list_recent30(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.goods_list_recent30(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
                 path: '/v1_api/goods_list',
                 options: routes_config.goods_list(QUERY),
                 handler: async(request:Request, h:any) => {

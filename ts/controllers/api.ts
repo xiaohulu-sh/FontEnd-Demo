@@ -2382,6 +2382,206 @@ export module api{
             }
         }
     }
+    
+    export async function goods_recent30_brand_info(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let isRecordCache = true;
+        let response:any = {
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let price = query.price;
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 10){
+                limit = 10;
+            }
+            if(limit <= 0){
+                limit = 10;
+            }
+            paramsCode = md5(`${route}|${platform}|${roomid}|${price}|${page}|${limit}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/dianshang/anchor/sales_info`,{
+                platform_id:platform,
+                room_id:roomid
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+
+            let ret = JSON.parse(res);
+            if(ret.code == 100 && !utils.empty(ret.data)){
+                let data = ret.data;
+                if(data == 'waitting'){
+                    isRecordCache = false;
+                    response.status = 'waitting';
+                }else{
+                    response = data;
+                }
+            }
+            if(isRecordCache){
+                await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            }
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            console.log(e);
+            if(isRecordCache){
+                await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            }
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    export async function goods_list_recent30(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {
+            data:[],
+            total:0,
+            current_page:1,
+            last_page:1
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let roomid = query.roomid;
+            let price = query.price;
+            let brand_name = query.brand_name;
+            let tag_name = query.tag_name;
+            let plat_label = query.plat_label;
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 10){
+                limit = 10;
+            }
+            if(limit <= 0){
+                limit = 10;
+            }
+            paramsCode = md5(`${route}|${platform}|${roomid}|${price}|${brand_name}|${tag_name}|${plat_label}|${page}|${limit}`);
+
+            if(platform == constants.VIDEO_DOUYIN_PLAT_ID){
+                platform = constants.LIVE_DOUYIN_PLAT_ID;
+            }else if(platform == constants.VIDEO_KUAISHOU_PLAT_ID){
+                platform = constants.LIVE_KUAISHOU_PLAT_ID;
+            }
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+
+            let params:any = {
+                platform_id:platform,
+                room_id:roomid,
+                page:page,
+                limit:limit,
+            };
+
+            if(!utils.empty(price)){
+                let priceStr = '';
+                let priceAry:any = price.split('-');
+                if(priceAry[1] != 0){
+                    priceStr = `${priceAry[0]},${priceAry[1]}`;
+                }else{
+                    priceStr = `${priceAry[0]}`;
+                }
+                params['min_price'] = priceStr;
+            }
+            if(!utils.empty(brand_name)){
+                params['brand_name'] = brand_name;
+            }
+            if(!utils.empty(tag_name)){
+                params['tag_name'] = tag_name;
+            }
+            if(!utils.empty(plat_label)){
+                params['plat_label'] = plat_label;
+            }
+
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/dianshang/anchor/sales_goods_list`,params,{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+            let ret = JSON.parse(res);
+            if(ret.code == 100 && !utils.empty(ret.data)){
+                let data = ret.data;
+                response = data;
+            }
+
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            console.log(e);
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
     async function live_goods_list_detail(data_list:any, source:string = constants.SOURCE_LIST, time_type:string = constants.TIME_TYPE_DAY,price:string){
         let list:any = [];
         try {

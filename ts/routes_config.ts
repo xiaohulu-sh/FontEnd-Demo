@@ -263,6 +263,47 @@ export module routes_config{
         }
     }
     
+    export function goods_list_recent30(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('平台号'),
+            roomid:Joi.string().required().description('房间id'),
+            price:Joi.string().default().description('价格区间：空=》不限，其余字符串传递格式（如100元-500元：100-500，如500元以上：500-0,如50元以下：0-50）'),
+            brand_name:Joi.string().default().description('商品品牌：空=》不限，填名称(需要encode传递)'),
+            tag_name:Joi.string().default().description('商品品类：空=》不限，填名称(需要encode传递)'),
+            plat_label:Joi.string().default().description('商品来源：空=》不限，填名称(需要encode传递)'),
+            page:Joi.number().default(1).description('页号'),
+            limit:Joi.number().default(10).description('获取数量，每页最多10')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '【带货直播分析】直播商品列表(近30天)',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    export function goods_recent30_brand_info(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('平台号'),
+            roomid:Joi.string().required().description('房间id'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '【带货直播分析】电商红人近30天品类品牌统计（返回结果里若包含status=waitting,说明是异步等待接口，需要做等待机制。goods_list_recent30接口需要等待此接口结果才能调用）',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
     export function odata_tag_list(valid:string='payload'){
         let val = Joi.object({
         });
