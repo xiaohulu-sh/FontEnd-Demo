@@ -2922,7 +2922,8 @@ export module api{
             }
             let plat_type = query.plat_type;
             let tags = query.tags;
-            let tag_30_sale = query.tag_30_sale;
+            let avg_live_sale = query.avg_live_sale;
+            let avg_live_order = query.avg_live_order;
             let single_live_agv_sale = query.single_live_agv_sale;
             let goods_agv_sale = query.goods_agv_sale;
             let live_count = query.live_count;
@@ -2941,7 +2942,7 @@ export module api{
             if(limit <= 0){
                 limit = 30;
             }
-            paramsCode = md5(`${route}|${plat_type}|${tags}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
+            paramsCode = md5(`${route}|${plat_type}|${tags}|${avg_live_sale}|${avg_live_order}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
             if(!utils.empty(cacheRes)){
@@ -2966,8 +2967,11 @@ export module api{
             if(!utils.empty(tags)){
                 params.tag_ali_id = tags;
             }
-            if(!utils.empty(tag_30_sale)){
-                params.tag_score = tag_30_sale;
+            if(!utils.empty(avg_live_sale)){
+                params.avg_live_sale = avg_live_sale;
+            }
+            if(!utils.empty(avg_live_order)){
+                params.avg_live_order = avg_live_order;
             }
             if(!utils.empty(single_live_agv_sale)){
                 let tempAry = single_live_agv_sale.split('-');
