@@ -2922,6 +2922,7 @@ export module api{
             }
             let plat_type = query.plat_type;
             let tags = query.tags;
+            let tag_30_sale = query.tag_30_sale;
             let single_live_agv_sale = query.single_live_agv_sale;
             let goods_agv_sale = query.goods_agv_sale;
             let live_count = query.live_count;
@@ -2964,6 +2965,9 @@ export module api{
             params.platIDs = platIDs;
             if(!utils.empty(tags)){
                 params.tag_ali_id = tags;
+            }
+            if(!utils.empty(tag_30_sale)){
+                params.tag_score = tag_30_sale;
             }
             if(!utils.empty(single_live_agv_sale)){
                 let tempAry = single_live_agv_sale.split('-');

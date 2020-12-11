@@ -324,6 +324,7 @@ export module routes_config{
         let val = Joi.object({
             plat_type:Joi.number().default().description('平台类型：空=》全部 201.抖音 202.快手'),
             tags:Joi.string().default().description('创作类型：空=》全部 ，标签ids'),
+            tag_30_sale:Joi.string().default(0).description('所选品类30日直播销售额, 大于等于所传值'),
             single_live_agv_sale:Joi.string().default().description('单场平均销售额：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
             goods_agv_sale:Joi.string().default().description('带货平均客单价：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
             live_count:Joi.string().default().description('直播场次：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
