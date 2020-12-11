@@ -348,6 +348,24 @@ export module routes_config{
             validate:obj
         }
     }
+    
+    export function sales_anchors_goodat_goods(valid:string='payload'){
+        let val = Joi.object({
+            plat_Room_sets:Joi.string().required().description('平台id,roomId 下划线分隔多个'),
+            top_num:Joi.number().default(3).description('限制每个主播按soce降序只取前多少条'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '批量获取主播擅长品类',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function odata_filter_tags(valid:string='payload'){
         let val = Joi.object({
             tagIds:Joi.string().default().description('标签组（可批量，英文逗号相隔）'),

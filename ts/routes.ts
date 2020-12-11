@@ -179,6 +179,14 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await api.sales_anchors_by_goods(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/sales_anchors_goodat_goods',
+                options: routes_config.sales_anchors_goodat_goods(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.sales_anchors_goodat_goods(request,microtime());
+                },
             }
         ]);
     }

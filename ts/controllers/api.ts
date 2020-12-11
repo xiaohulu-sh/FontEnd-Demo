@@ -3052,7 +3052,65 @@ export module api{
             }
         }
     }
+    
+    export async function sales_anchors_goodat_goods(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let top_num = query.top_num;
+            let plat_Room_sets = query.plat_Room_sets;
+            
+            paramsCode = md5(`${route}|${plat_Room_sets}|${top_num}`);
 
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/8033/getMuiltAnchorToptagsByPlatRoomIDSet`,{
+                plat_Room_sets:plat_Room_sets,
+                topn:top_num
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+            let ret = JSON.parse(res);
+            if(!utils.empty(ret)){
+                response = ret;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
     export async function clear_cache(request:any, microtime:number){
         let query = null;
         let method = request.method;
