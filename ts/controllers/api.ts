@@ -1,4 +1,4 @@
-import { date, required } from '@hapi/joi';
+import { compile, date, required } from '@hapi/joi';
 import { platform } from 'os';
 import { redisHelper } from '../library/redisHelper';
 import { utils } from '../library/utils';
@@ -2907,6 +2907,144 @@ export module api{
             }
         }
     }
+
+    export async function sales_anchors_by_goods(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let paramsCode = '';
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let plat_type = query.plat_type;
+            let tags = query.tags;
+            let single_live_agv_sale = query.single_live_agv_sale;
+            let goods_agv_sale = query.goods_agv_sale;
+            let live_count = query.live_count;
+            let fans_count = query.fans_count;
+            let live_online_count = query.live_online_count;
+            let sort_by = query.sort_by;
+            let sort_type = query.sort_type;
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 30){
+                limit = 30;
+            }
+            if(limit <= 0){
+                limit = 30;
+            }
+            paramsCode = md5(`${route}|${plat_type}|${tags}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
+
+            let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
+            if(!utils.empty(cacheRes)){
+                return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }
+            let params:any = {};
+            let platIDs = ``;
+            if(!utils.empty(plat_type)){
+                if(plat_type == constants.VIDEO_DOUYIN_PLAT_ID){
+                    platIDs = `${constants.LIVE_DOUYIN_PLAT_ID}`;
+                }else if(plat_type == constants.VIDEO_KUAISHOU_PLAT_ID){
+                    platIDs = `${constants.LIVE_KUAISHOU_PLAT_ID}`;
+                }
+            }else{
+                platIDs = `${constants.LIVE_DOUYIN_PLAT_ID},${constants.LIVE_KUAISHOU_PLAT_ID}`;
+            }
+            params.platIDs = platIDs;
+            if(!utils.empty(tags)){
+                params.tag_ali_id = tags;
+            }
+            if(!utils.empty(single_live_agv_sale)){
+                let tempAry = single_live_agv_sale.split('-');
+                if(tempAry[1] == 0){
+                    params.sign_live_agv_price_min = tempAry[0];
+                }else{
+                    params.sign_live_agv_price_min = tempAry[0];
+                    params.sign_live_agv_price_max = tempAry[1];
+                }
+            }
+            if(!utils.empty(goods_agv_sale)){
+                let tempAry = goods_agv_sale.split('-');
+                if(tempAry[1] == 0){
+                    params.prod_agv_price_min = tempAry[0];
+                }else{
+                    params.prod_agv_price_min = tempAry[0];
+                    params.prod_agv_price_max = tempAry[1];
+                }
+            }
+            if(!utils.empty(live_count)){
+                let tempAry = live_count.split('-');
+                if(tempAry[1] == 0){
+                    params.live_count_min = tempAry[0];
+                }else{
+                    params.live_count_min = tempAry[0];
+                    params.live_count_max = tempAry[1];
+                }
+            }
+            if(!utils.empty(fans_count)){
+                let tempAry = fans_count.split('-');
+                if(tempAry[1] == 0){
+                    params.fans_count_min = tempAry[0];
+                }else{
+                    params.fans_count_min = tempAry[0];
+                    params.fans_count_max = tempAry[1];
+                }
+            }
+            if(!utils.empty(live_online_count)){
+                let tempAry = live_online_count.split('-');
+                if(tempAry[1] == 0){
+                    params.online_viewer_max_min = tempAry[0];
+                }else{
+                    params.online_viewer_max_min = tempAry[0];
+                    params.online_viewer_max_max = tempAry[1];
+                }
+            }
+            params.sort_by = sort_by;
+            params.sort_type = sort_type;
+            params.page = page;
+            params.limit = limit;
+
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/8033/getSalesAnchorsByPar`,params,{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+            let ret = JSON.parse(res);
+            if(!utils.empty(ret)){
+                response = ret;
+            }
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+
     export async function clear_cache(request:any, microtime:number){
         let query = null;
         let method = request.method;

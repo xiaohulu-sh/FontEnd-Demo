@@ -320,6 +320,32 @@ export module routes_config{
         }
     }
     
+    export function sales_anchors_by_goods(valid:string='payload'){
+        let val = Joi.object({
+            plat_type:Joi.number().default().description('平台类型：空=》全部 201.抖音 202.快手'),
+            tags:Joi.string().default().description('创作类型：空=》全部 ，标签ids'),
+            single_live_agv_sale:Joi.string().default().description('单场平均销售额：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            goods_agv_sale:Joi.string().default().description('带货平均客单价：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            live_count:Joi.string().default().description('直播场次：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            fans_count:Joi.string().default().description('主播粉丝：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            live_online_count:Joi.string().default().description('直播在线人数：空=》不限，其余字符串传递格式（如1万-5万：10000-50000，如10万以上：100000-0,如1万以下：0-10000）'),
+            sort_by:Joi.number().default(6).allow([1,2,3,4,5,6]).description('按什么排序排序：1销售额，2 销售量，3单场平均销售额，4带货商品客单价，5直播场次，6主播粉丝,默认销售额'),
+            sort_type:Joi.number().default(2).allow([1,2]).description('排序升降序：1降序，2 升序，默认降序'),
+            page:Joi.number().default(1).description('页号'),
+            limit:Joi.number().default(30).description('分页参数，指定获取数量(暂定最大30个)'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '按照带货品类搜索红人',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function odata_filter_tags(valid:string='payload'){
         let val = Joi.object({
             tagIds:Joi.string().default().description('标签组（可批量，英文逗号相隔）'),
