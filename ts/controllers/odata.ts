@@ -127,4 +127,67 @@ export module odata{
             }
         }
     }
+    
+    export async function odata_all_anchors(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let response:any = {
+            total:0,
+            list:[],
+            current_page:1,
+            last_page:1
+        };
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let page = query.page;
+            let limit = query.limit;
+            if(page <= 0){
+                page = 1;
+            }
+            if(limit > 30){
+                limit = 30;
+            }
+            if(limit <= 0){
+                limit = 30;
+            }
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/mvjdanchors`,{
+                '$count':true,
+                '$skip':page*limit-limit,
+                '$top':limit
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            });
+            let ret = JSON.parse(res);
+            let total = ret['@odata.count'];
+            response.total = total;
+            response.current_page = page;
+            let lastpage = Math.ceil(total/limit);
+            response.last_page = lastpage;
+            response.list = ret.value;
+
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
 }

@@ -174,6 +174,14 @@ export module routes {
             },
             {
                 method: ['GET'],
+                path: '/v1_api/odata_all_anchors',
+                options: routes_config.odata_all_anchors(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_all_anchors(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
                 path: '/v1_api/sales_anchors_by_goods',
                 options: routes_config.sales_anchors_by_goods(QUERY),
                 handler: async(request:Request, h:any) => {
