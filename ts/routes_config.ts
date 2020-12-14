@@ -385,7 +385,7 @@ export module routes_config{
     export function odata_all_anchors(valid:string='payload'){
         let val = Joi.object({
             page:Joi.number().default(1).description('页号'),
-            limit:Joi.number().default(30).description('分页参数，指定获取数量')
+            limit:Joi.string().default(30).description('分页参数，指定获取数量')
         });
         let obj:any = {};
         obj[valid] = val;
@@ -394,6 +394,24 @@ export module routes_config{
         };
         return {
             description: 'odata获取所有红人',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
+    
+    export function odata_single_anchors_info(valid:string='payload'){
+        let val = Joi.object({
+            platform:Joi.number().required().description('大平台号'),
+            room_id:Joi.number().required().description('房间号')
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: 'odata获取单个红人信息',
             notes: 'method:get',
             tags: ['api'],
             validate:obj

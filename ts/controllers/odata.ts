@@ -158,7 +158,8 @@ export module odata{
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/mvjdanchors`,{
                 '$count':true,
                 '$skip':page*limit-limit,
-                '$top':limit
+                '$top':limit,
+                '$select':'Platform,RoomId'
             },{
                 'app-id':config['core_appid'],
                 'app-secret':config['core_appsecret']
@@ -170,6 +171,50 @@ export module odata{
             let lastpage = Math.ceil(total/limit);
             response.last_page = lastpage;
             response.list = ret.value;
+
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+    export async function odata_single_anchors_info(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platform = query.platform;
+            let room_id = query.room_id;
+            
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/odata/mvjdanchors`,{
+                '$filter':`Platform eq ${platform} and RoomId eq '${room_id}'`,
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            });
+            let ret = JSON.parse(res);
+            if(!utils.empty(ret.value)){
+                response = ret.value[0];
+            }
 
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,

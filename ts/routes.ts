@@ -182,6 +182,14 @@ export module routes {
             },
             {
                 method: ['GET'],
+                path: '/v1_api/odata_single_anchors_info',
+                options: routes_config.odata_single_anchors_info(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await odata.odata_single_anchors_info(request,microtime());
+                },
+            },
+            {
+                method: ['GET'],
                 path: '/v1_api/sales_anchors_by_goods',
                 options: routes_config.sales_anchors_by_goods(QUERY),
                 handler: async(request:Request, h:any) => {
