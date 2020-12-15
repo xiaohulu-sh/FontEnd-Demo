@@ -2924,6 +2924,7 @@ export module api{
             let tags = query.tags;
             let avg_live_sale = query.avg_live_sale;
             let avg_live_order = query.avg_live_order;
+            let single_live_agv_order = query.single_live_agv_order;
             let single_live_agv_sale = query.single_live_agv_sale;
             let goods_agv_sale = query.goods_agv_sale;
             let live_count = query.live_count;
@@ -2942,7 +2943,7 @@ export module api{
             if(limit <= 0){
                 limit = 30;
             }
-            paramsCode = md5(`${route}|${plat_type}|${tags}|${avg_live_sale}|${avg_live_order}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
+            paramsCode = md5(`${route}|${plat_type}|${tags}|${avg_live_sale}|${avg_live_order}|${single_live_agv_order}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
             if(!utils.empty(cacheRes)){
@@ -2968,10 +2969,19 @@ export module api{
                 params.tag_ali_id = tags;
             }
             if(!utils.empty(avg_live_sale)){
-                params.avg_live_sale = avg_live_sale;
+                params.avg_live_sales_price = avg_live_sale;
             }
             if(!utils.empty(avg_live_order)){
-                params.avg_live_order = avg_live_order;
+                params.avg_live_sales_num = avg_live_order;
+            }
+            if(!utils.empty(single_live_agv_order)){
+                let tempAry = single_live_agv_order.split('-');
+                if(tempAry[1] == 0){
+                    params.sign_live_agv_sales_num_min = tempAry[0];
+                }else{
+                    params.sign_live_agv_sales_num_min = tempAry[0];
+                    params.sign_live_agv_sales_num_max = tempAry[1];
+                }
             }
             if(!utils.empty(single_live_agv_sale)){
                 let tempAry = single_live_agv_sale.split('-');
@@ -3018,8 +3028,8 @@ export module api{
                     params.online_viewer_max_max = tempAry[1];
                 }
             }
-            params.sort_by = sort_by;
-            params.sort_type = sort_type;
+            params.sortBy = sort_by;
+            params.sortType = sort_type;
             params.page = page;
             params.limit = limit;
 

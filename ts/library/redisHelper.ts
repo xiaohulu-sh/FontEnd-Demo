@@ -140,8 +140,14 @@ export class redisHelper{
     public static async del(keys:Array<string>|string){
         return new Promise( async(resolve, reject) => {
             let client = await this.getInstance(this.redis_conf);
-            client.del(keys);
-            resolve();
+            client.del(keys, function(error:any, reply:any){
+                if (error) {
+                    console.log(`[${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}]ERR: ${error}`);
+                    reject(error);
+                } else {
+                    resolve(reply);
+                } 
+            });
         });
     }
     public static async mget(keys:Array<string>){
