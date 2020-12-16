@@ -616,7 +616,7 @@ export module api{
                             video_view_count:!utils.empty(data[i].video_view_count)?data[i].video_view_count:0,
                             video_desc:data[i].video_desc,
                             video_url:data[i].video_share_url,
-                            video_create_time:(data[i].video_create_time==null||data[i].video_create_time=='')?'':sd.format(data[i].video_create_time, 'YYYY-MM-DD'),
+                            video_create_time:(data[i].video_create_time==null||data[i].video_create_time=='')?'':sd.format(data[i].video_create_time*1000, 'YYYY-MM-DD'),
                             video_screen_pic:video_screen_pic
                         });
                     }
@@ -624,14 +624,14 @@ export module api{
             }
 
             response.list = list;
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,
                 path:route,
                 resTime:utils.microtime()
             });
         }catch(e){
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
             try{
                 let data = JSON.parse(e.message);
                 return utils.responseCommon(data, null, {
