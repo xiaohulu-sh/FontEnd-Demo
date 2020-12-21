@@ -2541,13 +2541,13 @@ export module api{
                 params['min_price'] = priceStr;
             }
             if(!utils.empty(brand_name)){
-                params['brand_name'] = brand_name;
+                params['brand_name'] = encodeURI(brand_name);
             }
             if(!utils.empty(tag_name)){
-                params['tag_name'] = tag_name;
+                params['tag_name'] = encodeURI(tag_name);
             }
             if(!utils.empty(plat_label)){
-                params['plat_label'] = plat_label;
+                params['plat_label'] = encodeURI(plat_label);
             }
 
             let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/dianshang/anchor/sales_goods_list`,params,{
@@ -2560,7 +2560,7 @@ export module api{
                 response = data;
             }
 
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_t, JSON.stringify(response));
             return utils.responseCommon(results['SUCCESS'], response, {
                 microtime:microtime,
                 path:route,
@@ -2568,7 +2568,7 @@ export module api{
             });
         }catch(e){
             console.log(e);
-            await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
+            // await redisHelper.setex(`${redisHelper.P_DATA_POOL}${paramsCode}`, redisHelper._expire_short_t, JSON.stringify(response));
             try{
                 let data = JSON.parse(e.message);
                 return utils.responseCommon(data, null, {
