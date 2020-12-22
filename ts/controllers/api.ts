@@ -36,7 +36,7 @@ export module api{
             paramsCode = md5(`${route}|${platform}|${roomid}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -330,7 +330,7 @@ export module api{
             paramsCode = md5(`${route}|${platform}|${roomid}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -422,7 +422,7 @@ export module api{
             paramsCode = md5(`${route}|${platform}|${roomid}|${type}|${day}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -501,7 +501,7 @@ export module api{
             paramsCode = md5(`${route}|${platform}|${roomid}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -570,7 +570,7 @@ export module api{
             paramsCode = md5(`${route}|${platform}|${roomid}|${type}|${limit}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -688,7 +688,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -922,7 +922,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -1319,7 +1319,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -1487,7 +1487,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -1922,7 +1922,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2130,7 +2130,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2315,7 +2315,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2420,7 +2420,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2515,7 +2515,7 @@ export module api{
             }
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2808,7 +2808,7 @@ export module api{
             paramsCode = md5(`${route}|${batch_pid_rid}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2870,7 +2870,7 @@ export module api{
             paramsCode = md5(`${route}|${pid}|${rid}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -2946,7 +2946,7 @@ export module api{
             paramsCode = md5(`${route}|${plat_type}|${tags}|${avg_live_sale}|${avg_live_order}|${single_live_agv_order}|${single_live_agv_sale}|${goods_agv_sale}|${live_count}|${fans_count}|${live_online_count}|${sort_by}|${sort_type}|${page}|${limit}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -3081,7 +3081,7 @@ export module api{
             paramsCode = md5(`${route}|${plat_Room_sets}|${top_num}`);
 
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,

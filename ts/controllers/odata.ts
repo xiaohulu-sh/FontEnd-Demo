@@ -28,7 +28,7 @@ export module odata{
             paramsCode = md5(`${route}|${page}|${limit}`);
             
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
@@ -86,7 +86,7 @@ export module odata{
             paramsCode = md5(`${route}|${tagIds}`);
             
             let cacheRes:any = await redisHelper.get(`${redisHelper.P_DATA_POOL}${paramsCode}`);
-            if(!utils.empty(cacheRes)){
+            if(!utils.empty(cacheRes) && (config['isOpenCache']!=undefined?config['isOpenCache']:true)){
                 return utils.responseCommon(results['SUCCESS'], JSON.parse(cacheRes), {
                     microtime:microtime,
                     path:route,
