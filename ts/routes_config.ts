@@ -367,6 +367,23 @@ export module routes_config{
             validate:obj
         }
     }
+    export function get_anchor_pid_record(valid:string='payload'){
+        let val = Joi.object({
+            platID:Joi.number().required().description('平台id'),
+            roomID:Joi.string().required().description('roomid'),
+        });
+        let obj:any = {};
+        obj[valid] = val;
+        obj.options = {
+            allowUnknown: true,
+        };
+        return {
+            description: '获取主播PID数据',
+            notes: 'method:get',
+            tags: ['api'],
+            validate:obj
+        }
+    }
     export function odata_filter_tags(valid:string='payload'){
         let val = Joi.object({
             tagIds:Joi.string().default().description('标签组（可批量，英文逗号相隔）'),

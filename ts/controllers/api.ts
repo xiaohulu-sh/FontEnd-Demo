@@ -3121,6 +3121,52 @@ export module api{
             }
         }
     }
+
+    export async function get_anchor_pid_record(request:any, microtime:number){
+        let query = null;
+        let method = request.method;
+        let route = request.path;
+        let response:any = {};
+        try{
+            if(method == 'get'){
+                query = request.query;
+            }else if(method == 'post'){
+                query = request.payload;
+            }
+            let platID = query.platID;
+            let roomID = query.roomID;
+            
+            let res:any = await utils.getAsyncRequest(`${config['core_host']}/apis/8033/getAnchorPidForAnchorID`,{
+                platID:platID,
+                roomID:roomID
+            },{
+                'app-id':config['core_appid'],
+                'app-secret':config['core_appsecret']
+            })
+            let ret = JSON.parse(res);
+            if(!utils.empty(ret)){
+                response = ret;
+            }
+            return utils.responseCommon(results['SUCCESS'], response, {
+                microtime:microtime,
+                path:route,
+                resTime:utils.microtime()
+            });
+        }catch(e){
+            try{
+                let data = JSON.parse(e.message);
+                return utils.responseCommon(data, null, {
+                    microtime:microtime,
+                    path:route,
+                    resTime:utils.microtime()
+                });
+            }catch(error){
+                console.log(`[crash][${sd.format(new Date(), 'YYYY-MM-DD HH:mm:ss')}] ${route}|${JSON.stringify(query)}`);
+                return utils.responseCommon(results['ERROR'], null, {});
+            }
+        }
+    }
+
     export async function clear_cache(request:any, microtime:number){
         let query = null;
         let method = request.method;

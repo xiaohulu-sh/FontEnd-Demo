@@ -203,6 +203,14 @@ export module routes {
                 handler: async(request:Request, h:any) => {
                     return await api.sales_anchors_goodat_goods(request,microtime());
                 },
+            },
+            {
+                method: ['GET'],
+                path: '/v1_api/get_anchor_pid_record',
+                options: routes_config.get_anchor_pid_record(QUERY),
+                handler: async(request:Request, h:any) => {
+                    return await api.get_anchor_pid_record(request,microtime());
+                },
             }
         ]);
     }
